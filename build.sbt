@@ -7,7 +7,6 @@ addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M5" cross CrossVersion
 scalacOptions += "-P:xgettext:xitrum.I18n"
 autoCompilerPlugins := true
 
-
 val commonSettings = Seq(
   organization := "com.maiden",
   version := "1.0.0",
@@ -74,7 +73,7 @@ lazy val migrate = inputKey[Unit]("Run migrations")
 lazy val deploy = inputKey[Unit]("Run deployment tasks")
 
 
-lazy val framework = (project in (file("framework/core")))
+lazy val api = (project in (file(".")))
   .enablePlugins(BuildInfoPlugin)
   .settings(baseBuildSettings ++ scalateSettings ++ templateSettings ++ Seq(
     mainClass in (Compile, run) := Some("com.maiden.framework.api.Boot"),
@@ -145,7 +144,7 @@ lazy val migrations = (project in (file("migrations")))
 )
 
 /* this is needed solely for the Enum-like StatusCodes used by the API */
-lazy val macros  = (project in file("framework/macros")) 
+lazy val macros  = (project in file("macros")) 
   .settings(
     commonSettings ++ Seq(
       libraryDependencies <+= scalaVersion("org.scala-lang" % "scala-compiler" % _)

@@ -2,7 +2,7 @@
  * Copyright (c) 2015. Didd, Inc All Rights Reserved
  */
 
-package com.didd.data.migrations
+package com.maiden.migrations
 
 import com.imageworks.migration._
 
@@ -17,8 +17,9 @@ class Migrate_20150709160328_CreateProfile extends Migration {
       t.varchar("first_name", NotNull, Limit(40))
       t.varchar("last_name", NotNull, Limit(60))
       t.varchar("tagline", Nullable, Limit(128))
+      t.varchar("location", Nullable, Limit(128))
       t.varchar("bio", Nullable, Limit(2048))
-      t.varchar("profile_picture", Nullable, Limit(256))
+      t.varchar("profile_picture", Nullable, Limit(512))
       t.timestamp("created_at", NotNull, Default("NOW()"))
       t.timestamp("updated_at", NotNull, Default("NOW()"))
     }

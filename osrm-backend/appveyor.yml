@@ -1,0 +1,44 @@
+environment:
+  matrix:
+  - configuration: Release
+#  - configuration: Debug
+
+# scripts that are called at very beginning, before repo cloning
+init:
+  - git config --global core.autocrlf input
+
+os: Visual Studio 2015
+
+# clone directory
+clone_folder: c:\projects\osrm
+
+platform: x64
+
+build_script:
+  - CALL appveyor-build.bat
+
+test: off
+
+artifacts:
+  - path: osrm_Release.zip
+    name: osrm_Release.zip
+#  - path: osrm_Debug.zip
+#    name: osrm_Debug.zip
+
+deploy:
+  provider: FTP
+  server:
+    secure: ef7oiQTTXFGt8NdNiOHm/uRFVrUttzyFbIlnaeHhQvw=
+  username:
+    secure: Bw+Se2GTJxA6+GtRkEc//tQSBHOuFIuJHBjFwR9cD+8=
+  password:
+    secure: eqwESZqxMXC/j5mOCpaXuw==
+  folder: /
+  enable_ssl: true
+  active_mode: false
+
+# notifications:
+#   - provider: HipChat
+#     auth_token:
+#       secure: boLE7BjcahdIUxv9jkN7U3F8iOASF+MkhtctlVoWJoo=
+#     room: Directions

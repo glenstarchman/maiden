@@ -66,6 +66,18 @@ object ConnectionPool extends Log {
     }
   }
 
+  def rawConnection(config: Map[String, Any]) = {
+    try {
+      val url = s"${connectionString}?user=${config("db.user")}&password=${config("db.password")}"
+      DriverManager.getConnection(url)
+    } catch {
+      case e: Exception => {
+        fatal(e)
+        throw(new DatasourceNotAvailableException())
+      }
+    }
+  }
+
   private[this] val connectionPool = {
     try {
       val bcp_config = new BoneCPConfig()

@@ -1,0 +1,54 @@
+#-----------------------------------------------------------------------------
+#
+#  Configuration for continuous integration service at travis-ci.org
+#
+#-----------------------------------------------------------------------------
+
+language: cpp
+
+sudo: false
+
+matrix:
+    include:
+        - os: linux
+          compiler: clang
+          env: BUILD_TYPE=Dev
+        - os: linux
+          compiler: clang
+          env: BUILD_TYPE=Release
+        - os: linux
+          compiler: gcc
+          env: BUILD_TYPE=Dev
+        - os: linux
+          compiler: gcc
+          env: BUILD_TYPE=Release
+        - os: osx
+          compiler: clang
+          env: BUILD_TYPE=Dev
+        - os: osx
+          compiler: clang
+          env: BUILD_TYPE=Release
+
+# http://docs.travis-ci.com/user/apt/
+addons:
+    apt:
+        sources:
+            - boost-latest
+            - ubuntu-toolchain-r-test
+        packages:
+            - g++-4.8
+            - gcc-4.8
+            - libboost1.55-dev
+            - libboost-program-options1.55-dev
+            - libgdal-dev
+            - libgeos++-dev
+            - libproj-dev
+            - libsparsehash-dev
+            - spatialite-bin
+
+install:
+    - scripts/travis_install.sh
+
+script:
+    - scripts/travis_script.sh
+

@@ -26,6 +26,6 @@ class Migrate_20151218031940_CreateStop extends Migration {
   }
 
   def down() {
-    //dropTable(table)
+    dropTable(table)
   }
 }

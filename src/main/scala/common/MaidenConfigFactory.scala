@@ -35,6 +35,12 @@ object MaidenConfigFactory {
     "db.database" -> conf.getString("db.database")
   )
 
+  lazy val osrmConfig = Map(
+    "osrm.server" -> conf.getString("osrm.server"),
+    "osrm.port" -> conf.getInt("osrm.port")
+
+  )
+
   lazy val memcachedConfig = Map(
     "memcached.host" -> conf.getString("memcached.host"),
     "memcached.default_ttl" -> conf.getInt("memcached.default_ttl")
@@ -42,7 +48,6 @@ object MaidenConfigFactory {
 
   lazy val cdnConfig = Map(
     "cdn.uri" -> conf.getString("cdn.uri"),
-    "screenshot.server" -> conf.getString("screenshot.server"),
     "tmp.file_dir" -> conf.getString("tmp.file_dir")  
   )
 
@@ -75,7 +80,7 @@ object MaidenConfigFactory {
     "fb.app_id" -> conf.getString("fb.app_id")
   )
 
-  lazy val config = generalConfig ++ basicAuth ++ 
+  lazy val config = generalConfig ++ basicAuth ++ osrmConfig ++ 
                     awsConfig ++ dbConfig ++ memcachedConfig ++ 
                     cdnConfig ++ adminConfig ++ mailConfig ++ 
                     hostConfig ++ facebookConfig

@@ -208,6 +208,8 @@ class UserLoginWithProvider extends UserApi {
         case "identity" => {
           val username = (paramo("username") getOrElse "").toString
           val password = (paramo("password") getOrElse "").toString
+          println(username)
+          println(password)
 
           val u = User.checkLogin(username, password)
 

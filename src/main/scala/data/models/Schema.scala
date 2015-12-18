@@ -161,6 +161,19 @@ object MaidenSchema extends Schema with  PrimitiveTypeMode with Log {
     }
   }
 
+  def rawUpdate(query: String) = {
+    try {
+      val connection = ConnectionPool.rawConnection
+      val statement = connection.prepareStatement(query)
+      val rs = statement.execute
+      statement.close()
+      connection.close()
+      rs
+    } catch {
+      case e: Exception => println(e) 
+    }
+  }
+
   /* query wrappers */
   def withTransaction[A](a: => A): A = {
     createSession
@@ -205,7 +218,6 @@ object MaidenSchema extends Schema with  PrimitiveTypeMode with Log {
   val FriendlyIds = table[FriendlyId]
   val SiteViews = table[SiteView]
   val Taggables = table[Taggable]
-  val Stops = table[Stop]
 
   /* for lookup */
   val lookup = Map(
@@ -215,8 +227,7 @@ object MaidenSchema extends Schema with  PrimitiveTypeMode with Log {
     "SocialAccount" -> SocialAccounts,
     "SocialFriend" -> SocialFriends,
     "FriendlyId" -> FriendlyIds,
-    "Taggable" -> Taggables,
-    "Stop" -> Stops
+    "Taggable" -> Taggables
   )
 
 }

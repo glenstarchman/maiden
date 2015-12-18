@@ -133,6 +133,7 @@ local obey_oneway               = true
 local obey_bollards             = true
 local ignore_areas              = true     -- future feature
 local u_turn_penalty            = 20
+local traffic_signal_penalty    = -20 
 
 local abs = math.abs
 local min = math.min
@@ -212,9 +213,9 @@ function node_function (node, result)
 
   -- check if node is a traffic light
   local tag = node:get_value_by_key("highway")
-  if tag and "traffic_signals" == tag then
-    result.traffic_lights = true;
-  end
+  --if tag and "traffic_signals" == tag then
+  --  result.traffic_lights = true;
+  --end
 end
 
 function way_function (way, result)

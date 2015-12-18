@@ -2,17 +2,17 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.data.models
+package com.maiden.data.models
 
 import scala.reflect.runtime.{ universe => ru }
 import scala.concurrent.duration._
 import java.sql.Timestamp
 import org.squeryl._
-import com.maiden.framework.common.converters._
-import com.maiden.framework.common.Types._
-import com.maiden.framework.data.models.MaidenSchema._
-import com.maiden.framework.common.MaidenCache._
-import com.maiden.framework.common.helpers.{Text}
+import com.maiden.common.converters._
+import com.maiden.common.Types._
+import com.maiden.data.models.MaidenSchema._
+import com.maiden.common.MaidenCache._
+import com.maiden.common.helpers.{Text}
 
 trait BaseMaidenTable extends Convertable with KeyedEntity[Long]
 

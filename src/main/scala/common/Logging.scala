@@ -2,7 +2,7 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.common
+package com.maiden.common
 
 import org.apache.log4j._
 import org.apache.log4j.Level._

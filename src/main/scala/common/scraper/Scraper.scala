@@ -1,7 +1,7 @@
 /* * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.common.scraper
+package com.maiden.common.scraper
 
 import java.net.URL
 import net.ruippeixotog.scalascraper.browser.Browser
@@ -9,9 +9,9 @@ import net.ruippeixotog.scalascraper.dsl.DSL._
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
 import net.ruippeixotog.scalascraper.dsl.DSL.Parse._
 import org.jsoup.nodes.Document
-import com.maiden.framework.common.helpers.{ImageHandler, ImageHelper}
-import com.maiden.framework.common.MaidenConfigFactory.config
-import com.maiden.framework.common.helpers.Text
+import com.maiden.common.helpers.{ImageHandler, ImageHelper}
+import com.maiden.common.MaidenConfigFactory.config
+import com.maiden.common.helpers.Text
 
 class Scraper(u: String) {
 

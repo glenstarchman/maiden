@@ -2,15 +2,15 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.data
+package com.maiden.data
 
 import java.io.{File, FilenameFilter}
 import scala.util.Properties
 import org.apache.commons.io.filefilter.WildcardFileFilter
 import org.joda.time.format.ISODateTimeFormat
 import com.imageworks.migration._
-import com.maiden.framework.common.helpers.Text._
-import com.maiden.framework.common.MaidenCache
+import com.maiden.common.helpers.Text._
+import com.maiden.common.MaidenCache
 
 object Migrate { 
 

@@ -1,4 +1,4 @@
-package com.maiden.framework.common
+package com.maiden.common
 
 import scala.concurrent.duration._
 import scala.concurrent._

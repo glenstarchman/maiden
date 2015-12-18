@@ -2,18 +2,18 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.data.models
+package com.maiden.data.models
 
 import java.sql.Timestamp
 import scala.collection.mutable.ListBuffer
-import com.maiden.framework.common.helpers.{Hasher, TokenGenerator}
-import com.maiden.framework.common.Types._
+import com.maiden.common.helpers.{Hasher, TokenGenerator}
+import com.maiden.common.Types._
 import MaidenSchema._
-import com.maiden.framework.common.MaidenCache._
-import com.maiden.framework.common.MaidenConfigFactory.generalConfig
-import com.maiden.framework.data.ConnectionPool
-import com.maiden.framework.common.exceptions._
-import com.maiden.framework.common.Codes._
+import com.maiden.common.MaidenCache._
+import com.maiden.common.MaidenConfigFactory.generalConfig
+import com.maiden.data.ConnectionPool
+import com.maiden.common.exceptions._
+import com.maiden.common.Codes._
 
 object UserHelper {
 
@@ -423,13 +423,13 @@ object User extends CompanionTable[User] {
     } 
     u match {
       case Some(user) => {
-        val access = TokenGenerator.generate
-        val secret = TokenGenerator.generate
+        //val access = TokenGenerator.generate
+        //val secret = TokenGenerator.generate
         //update their access token and secret key on login
         withTransaction {
           user.updatedAt = new Timestamp(System.currentTimeMillis)
-          user.accessToken = access
-          user.secretKey = secret
+          //user.accessToken = access
+          //user.secretKey = secret
           Users.upsert(user)
         }
         u

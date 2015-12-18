@@ -2,7 +2,7 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework
+package com.maiden
 
 
 package object common {

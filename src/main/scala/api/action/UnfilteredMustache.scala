@@ -2,10 +2,10 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.api.action
+package com.maiden.api.action
 
 import xitrum.annotation.GET
-import com.maiden.framework.common.helpers.FileReader
+import com.maiden.common.helpers.FileReader
 
 @GET("", "index", "app")
 class IndexAction extends BaseAction {

@@ -2,13 +2,13 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.common.social
+package com.maiden.common.social
 
 import com.restfb.{DefaultFacebookClient, DefaultJsonMapper, Parameter, Version}
 import com.restfb.types._
-import com.maiden.framework.common.MaidenConfigFactory.config
-import com.maiden.framework.common._
-import com.maiden.framework.common.exceptions._
+import com.maiden.common.MaidenConfigFactory.config
+import com.maiden.common._
+import com.maiden.common.exceptions._
 
 class MaidenFacebook(accessToken: String) {
 

@@ -2,13 +2,13 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.data
+package com.maiden.data
 import com.jolbox.bonecp.BoneCP
 import com.jolbox.bonecp.{BoneCPConfig, BoneCPDataSource}
 import java.sql.Connection
 import java.sql.DriverManager
-import com.maiden.framework.common.{MaidenConfigFactory, Log}
-import com.maiden.framework.common.exceptions._
+import com.maiden.common.{MaidenConfigFactory, Log}
+import com.maiden.common.exceptions._
  
 object ConnectionPool extends Log {
 

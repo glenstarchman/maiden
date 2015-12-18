@@ -2,7 +2,7 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.common
+package com.maiden.common
 
 import scala.util.parsing.json.{JSONArray, JSONObject}
 /* model status codes */
@@ -87,7 +87,7 @@ object Codes {
   /* CONTRIBUTER REQUEST = 500 */
   case object NO_VALID_REQUESTEES extends StatusCode(-501, "NO_VALID_REQUESTEES", "The contributor request did not contain any valid requestees")
 
-  import com.maiden.framework.macros.EnumerationMacros._
+  import com.maiden.macros.EnumerationMacros._
   val statusCodes: Set[StatusCode] = sealedInstancesOf[StatusCode]
   val statusCodesAsJson: JSONArray = 
     JSONArray(statusCodes.toList.sortBy(_.code).map(_.asJson()))

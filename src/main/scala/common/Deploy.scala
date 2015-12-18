@@ -1,7 +1,7 @@
-package com.maiden.framework.common
+package com.maiden.common
 
 import scala.util.Properties
-import com.maiden.framework.common.helpers.{AmazonS3, FileReader}
+import com.maiden.common.helpers.{AmazonS3, FileReader}
 
 /* deployment helpers */
 

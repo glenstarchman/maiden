@@ -48,7 +48,7 @@ val baseBuildSettings = commonSettings ++ Seq(
       }
     }.toString()
   ),
-	buildInfoPackage := "com.maiden.framework.common",
+	buildInfoPackage := "com.maiden.common",
 	buildInfoOptions += BuildInfoOption.BuildTime,
   buildInfoOptions += BuildInfoOption.ToMap,
   unmanagedClasspath in Compile <+= (baseDirectory) map { bd => Attributed.blank(bd / "config") },
@@ -76,14 +76,14 @@ lazy val deploy = inputKey[Unit]("Run deployment tasks")
 lazy val api = (project in (file(".")))
   .enablePlugins(BuildInfoPlugin)
   .settings(baseBuildSettings ++ scalateSettings ++ templateSettings ++ Seq(
-    mainClass in (Compile, run) := Some("com.maiden.framework.api.Boot"),
+    mainClass in (Compile, run) := Some("com.maiden.api.Boot"),
     migrate := Def.inputTaskDyn {
       val args: Seq[String] = spaceDelimited("<arg>").parsed
-      (runMain in Compile).toTask(s" com.maiden.framework.data.Migrate ${args.mkString(" ")}")
+      (runMain in Compile).toTask(s" com.maiden.data.Migrate ${args.mkString(" ")}")
     }.evaluated,
     deploy := Def.inputTaskDyn {
       val args: Seq[String] = spaceDelimited("<arg>").parsed
-      (runMain in Compile).toTask(s" com.maiden.framework.common.Deploy ${args.mkString(" ")}")
+      (runMain in Compile).toTask(s" com.maiden.common.Deploy ${args.mkString(" ")}")
     }.evaluated,
     ScalateKeys.scalateTemplateConfig in Compile := Seq(TemplateConfig(
       baseDirectory.value / "templates",

@@ -2,7 +2,7 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.data.models
+package com.maiden.data.models
 
 //import org.squeryl.PrimitiveTypeMode._
 import scala.collection.mutable.ArrayBuffer
@@ -20,10 +20,10 @@ import org.squeryl._
 import java.util.Date
 import java.sql.Timestamp
 import org.squeryl.PrimitiveTypeMode
-import com.maiden.framework.common.MaidenCache._
-import com.maiden.framework.data.ConnectionPool
-import com.maiden.framework.common.helpers.Text._
-import com.maiden.framework.common.Log
+import com.maiden.common.MaidenCache._
+import com.maiden.data.ConnectionPool
+import com.maiden.common.helpers.Text._
+import com.maiden.common.Log
 
 object SquerylEntrypoint extends PrimitiveTypeMode 
 
@@ -205,6 +205,7 @@ object MaidenSchema extends Schema with  PrimitiveTypeMode with Log {
   val FriendlyIds = table[FriendlyId]
   val SiteViews = table[SiteView]
   val Taggables = table[Taggable]
+  val Stops = table[Stop]
 
   /* for lookup */
   val lookup = Map(
@@ -214,7 +215,8 @@ object MaidenSchema extends Schema with  PrimitiveTypeMode with Log {
     "SocialAccount" -> SocialAccounts,
     "SocialFriend" -> SocialFriends,
     "FriendlyId" -> FriendlyIds,
-    "Taggable" -> Taggables
+    "Taggable" -> Taggables,
+    "Stop" -> Stops
   )
 
 }

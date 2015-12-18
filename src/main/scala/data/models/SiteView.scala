@@ -2,11 +2,11 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.data.models
+package com.maiden.data.models
 
 import java.sql.Timestamp
-import com.maiden.framework.common.helpers.{Hasher, TokenGenerator}
-import com.maiden.framework.common.Types._
+import com.maiden.common.helpers.{Hasher, TokenGenerator}
+import com.maiden.common.Types._
 import MaidenSchema._
 
 case class SiteView(var id: Long=0, 

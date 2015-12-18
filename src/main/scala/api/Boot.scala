@@ -2,11 +2,11 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.api
+package com.maiden.api
 
 import scala.util.Properties
 import xitrum.{Server, Config}
-import com.maiden.framework.common.MaidenConfigFactory
+import com.maiden.common.MaidenConfigFactory
 
 object Boot extends App {
   override def main(args: Array[String]) {

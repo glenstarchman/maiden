@@ -1,4 +1,4 @@
-package com.maiden.framework.data.models
+package com.maiden.data.models
 
 import java.sql.Timestamp
 import MaidenSchema._

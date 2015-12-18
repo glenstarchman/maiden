@@ -2,11 +2,11 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.data.models
+package com.maiden.data.models
 
 import java.sql.Timestamp
 import MaidenSchema._
-import com.maiden.framework.common.helpers.Text._
+import com.maiden.common.helpers.Text._
 
 case class FriendlyId(var id: Long = 0,
                       var model: String,

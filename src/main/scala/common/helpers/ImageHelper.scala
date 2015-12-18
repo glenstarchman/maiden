@@ -2,14 +2,14 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.common.helpers
+package com.maiden.common.helpers
 
 import java.io.File
 import java.net.URLEncoder
 import scala.concurrent.duration._
-import com.maiden.framework.common.MaidenConfigFactory.config
-import com.maiden.framework.common.exceptions._
-import com.maiden.framework.common.HttpClient
+import com.maiden.common.MaidenConfigFactory.config
+import com.maiden.common.exceptions._
+import com.maiden.common.HttpClient
 
 case class ImageDimensions(width: Int, height: Int, size: Int)
 case class ImageInfo(var path: String, dimensions: Option[ImageDimensions], imageType: String = "asset")

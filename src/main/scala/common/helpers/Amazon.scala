@@ -2,14 +2,14 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.common.helpers
+package com.maiden.common.helpers
 
 import java.io.File
 import scala.concurrent.ExecutionContext.Implicits.global
 import awscala._
 import awscala.s3._
-import com.maiden.framework.common.MaidenConfigFactory.config
-import com.maiden.framework.common.HttpClient
+import com.maiden.common.MaidenConfigFactory.config
+import com.maiden.common.HttpClient
 
 object AmazonS3 {
 

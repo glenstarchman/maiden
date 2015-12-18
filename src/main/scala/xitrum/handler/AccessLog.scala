@@ -10,8 +10,8 @@ import xitrum.{Action, Config, Log}
 import xitrum.scope.request.RequestEnv
 import xitrum.sockjs.SockJsAction
 import xitrum.action.Net
-import com.maiden.framework.api.action.BaseAction
-import com.maiden.framework.data.models.User
+import com.maiden.api.action.BaseAction
+import com.maiden.data.models.User
 
 
 /* override Xitrum AccessLog to add in the request user */

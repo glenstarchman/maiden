@@ -1,8 +1,8 @@
-package com.maiden.framework.common.exceptions
+package com.maiden.common.exceptions
 
 import io.netty.handler.codec.http.{HttpResponseStatus => H}
-import com.maiden.framework.common.{Codes => R}
-import com.maiden.framework.common.Codes.StatusCode
+import com.maiden.common.{Codes => R}
+import com.maiden.common.Codes.StatusCode
 
 
 class MaidenException(

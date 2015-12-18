@@ -2,7 +2,7 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.api.action
+package com.maiden.api.action
 
 import java.util.ArrayList
 import java.util.HashMap
@@ -22,16 +22,16 @@ import com.mindscapehq.raygun4java.core.RaygunClient
 import com.mindscapehq.raygun4java.core.messages.RaygunIdentifier
 import net.sf.uadetector.service._
 import net.sf.uadetector._
-import com.maiden.framework.common.{Codes, Log}
-import com.maiden.framework.common.Codes.StatusCode
-import com.maiden.framework.common.converters.{Mapper, Convertable}
-import com.maiden.framework.common.converters.ListConverter
-import com.maiden.framework.common.helpers.Text._
-import com.maiden.framework.common.BuildInfo
-import com.maiden.framework.data.models.{User, FriendlyId}
-import com.maiden.framework.common.MaidenConfigFactory
-import com.maiden.framework.common.Types._
-import com.maiden.framework.common.exceptions._
+import com.maiden.common.{Codes, Log}
+import com.maiden.common.Codes.StatusCode
+import com.maiden.common.converters.{Mapper, Convertable}
+import com.maiden.common.converters.ListConverter
+import com.maiden.common.helpers.Text._
+import com.maiden.common.BuildInfo
+import com.maiden.data.models.{User, FriendlyId}
+import com.maiden.common.MaidenConfigFactory
+import com.maiden.common.Types._
+import com.maiden.common.exceptions._
 
 trait BaseAction extends FutureAction with Log with SkipCsrfCheck {
 

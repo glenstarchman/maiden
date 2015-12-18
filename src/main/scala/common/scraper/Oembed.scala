@@ -2,13 +2,13 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.common.scraper
+package com.maiden.common.scraper
 
 import scala.concurrent.duration._
-import com.maiden.framework.common.exceptions._
-import com.maiden.framework.common.HttpClient
-import com.maiden.framework.common.helpers.Text
-import com.maiden.framework.common.MaidenConfigFactory.config
+import com.maiden.common.exceptions._
+import com.maiden.common.HttpClient
+import com.maiden.common.helpers.Text
+import com.maiden.common.MaidenConfigFactory.config
 
 object Oembed {
   private final val PROVIDERS = Map(

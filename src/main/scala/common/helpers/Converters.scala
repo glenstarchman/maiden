@@ -2,13 +2,13 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.common.converters
+package com.maiden.common.converters
 
 import scala.reflect._
 import scala.reflect.runtime.universe._
 import scala.util.parsing.json.{JSON, JSONObject, JSONArray}
-import com.maiden.framework.common.helpers.Text._
-import com.maiden.framework.common.Types._
+import com.maiden.common.helpers.Text._
+import com.maiden.common.Types._
 
 
 /* all kinds of conversions between types, some used in implicits */

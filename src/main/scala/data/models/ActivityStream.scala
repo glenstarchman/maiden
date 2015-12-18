@@ -1,4 +1,4 @@
-package com.maiden.framework.data.models
+package com.maiden.data.models
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -9,7 +9,7 @@ import org.json4s.native.JsonMethods._
 import org.json4s.Extraction._
 import org.json4s.native.Serialization._
 import org.json4s.native.Serialization
-import com.maiden.framework.common.Types._
+import com.maiden.common.Types._
 import MaidenSchema._
 
 case class ActivityStream(override var id: Long=0, 

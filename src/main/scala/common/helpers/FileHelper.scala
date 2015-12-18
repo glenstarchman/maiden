@@ -2,7 +2,7 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.common.helpers
+package com.maiden.common.helpers
 
 import java.io._
 import scala.io.{Source, Codec}

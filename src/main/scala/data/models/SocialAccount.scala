@@ -2,16 +2,16 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.data.models
+package com.maiden.data.models
 
 import java.sql.Timestamp
 import org.json4s._
 import org.json4s.native.Serialization._
 import org.json4s.native.Serialization
 import com.restfb.types.Location 
-import com.maiden.framework.common.helpers.{Hasher, TokenGenerator}
-import com.maiden.framework.common.Types._
-import com.maiden.framework.common.social.MaidenFacebook
+import com.maiden.common.helpers.{Hasher, TokenGenerator}
+import com.maiden.common.Types._
+import com.maiden.common.social.MaidenFacebook
 import MaidenSchema._
 
 

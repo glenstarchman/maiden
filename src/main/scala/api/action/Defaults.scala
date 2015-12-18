@@ -2,7 +2,7 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.api.action
+package com.maiden.api.action
 
 import xitrum.Action
 import xitrum.annotation.{Error404, Error500}

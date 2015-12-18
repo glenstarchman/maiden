@@ -2,17 +2,17 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.api.action
+package com.maiden.api.action
 
 import xitrum.annotation.{GET, POST, First, Swagger}
 import xitrum.SkipCsrfCheck
-import com.maiden.framework.data.models._
-import com.maiden.framework.data.models.MaidenSchema._
-import com.maiden.framework.common.converters.ListConverter
-import com.maiden.framework.common.MaidenConfigFactory.hostConfig
-import com.maiden.framework.common.social.MaidenFacebook
-import com.maiden.framework.common.exceptions._
-import com.maiden.framework.common.Codes.StatusCode
+import com.maiden.data.models._
+import com.maiden.data.models.MaidenSchema._
+import com.maiden.common.converters.ListConverter
+import com.maiden.common.MaidenConfigFactory.hostConfig
+import com.maiden.common.social.MaidenFacebook
+import com.maiden.common.exceptions._
+import com.maiden.common.Codes.StatusCode
 
 @Swagger(
   Swagger.Tags("User/Profile", "No Auth"),

@@ -3,7 +3,7 @@
  * Author: Glen Starchman (glen@didd.com)
  */
 
-package com.maiden.framework.macros
+package com.maiden.macros
 
 import scala.language.experimental.macros
 

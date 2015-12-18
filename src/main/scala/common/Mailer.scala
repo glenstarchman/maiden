@@ -2,7 +2,7 @@
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
  */
 
-package com.maiden.framework.common
+package com.maiden.common
 
 import java.io.File
 import scala.io.{Source, Codec}
@@ -12,12 +12,12 @@ import scala.concurrent.duration._
 import com.joypeg.scamandrill.client.{MandrillAsyncClient, MandrillBlockingClient}
 import com.joypeg.scamandrill.utils._
 import com.joypeg.scamandrill.models._
-import com.maiden.framework.common.MaidenConfigFactory.config
-import com.maiden.framework.data.models._
-import com.maiden.framework.data.models.MaidenSchema._
-import com.maiden.framework.common.helpers.{FileReader, AmazonS3}
-import com.maiden.framework.common.helpers.Text.slugify
-import com.maiden.framework.common.exceptions._
+import com.maiden.common.MaidenConfigFactory.config
+import com.maiden.data.models._
+import com.maiden.data.models.MaidenSchema._
+import com.maiden.common.helpers.{FileReader, AmazonS3}
+import com.maiden.common.helpers.Text.slugify
+import com.maiden.common.exceptions._
 
 class Mailer {
   val cdn = config("aws.s3.base_url").toString

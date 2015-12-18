@@ -33,6 +33,12 @@ case class Route(override var id: Long=0,
 
 object Route extends CompanionTable[Route] {
 
+  def getAllActiveRoutes() = fetch {
+    from(Routes)(r => 
+    where(r.active === true)
+    select(r)
+  }
+
   def getCurrentlyActive() = {
     val now = new DateTime(System.currentTimeMillis);
     val nowDay = now.getDayOfWeek
@@ -48,11 +54,12 @@ object Route extends CompanionTable[Route] {
     } else {
       nowHour.toString
     }
-
     val nowTime = s"${hour}:${min}"
 
-    println(nowTime)
+    fetch {
+      from(Routes(r => 
+      where (r.
 
+    }
   }
-
 }

@@ -41,3 +41,33 @@ class RouteInfo extends RouteApi {
     })
   }
 }
+
+@First
+@POST("api/route/active")
+@GET("api/route/active")
+@Swagger(
+  Swagger.OperationId("get_active"),
+  Swagger.Summary("retrieves all active routes")
+)
+class AllActiveRoutes extends RouteApi {
+  def execute() {
+    futureExecute(() => {
+      (R.OK, Route.getAllActiveRoutes)
+    })
+  }
+}
+
+@First
+@POST("api/route/operating")
+@GET("api/route/operating")
+@Swagger(
+  Swagger.OperationId("get_operating"),
+  Swagger.Summary("retrieves all currently operating routes")
+)
+class AllOperatingRoutes extends RouteApi {
+  def execute() {
+    futureExecute(() => {
+      (R.OK, Route.getCurrentlyActive)
+    })
+  }
+}

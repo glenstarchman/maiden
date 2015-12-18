@@ -36,7 +36,7 @@ object Route extends CompanionTable[Route] {
   def getAllActiveRoutes() = fetch {
     from(Routes)(r => 
     where(r.active === true)
-    select(r)
+    select(r))
   }
 
   def getCurrentlyActive() = {
@@ -57,9 +57,14 @@ object Route extends CompanionTable[Route] {
     val nowTime = s"${hour}:${min}"
 
     fetch {
-      from(Routes(r => 
-      where (r.
-
+      from(Routes)(r => 
+      where(
+        (nowDay.between(r.dayStart, r.dayEnd)) and
+        (nowTime.between(r.hourStart, r.hourEnd)) and
+        (r.active === true)
+      )
+      select(r))
     }
   }
+
 }

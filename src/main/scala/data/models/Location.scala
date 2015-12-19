@@ -40,9 +40,9 @@ object GpsLocation extends CompanionTable[GpsLocation] {
 
   }
 
-  def getCurrentForUser(userId: Long) = getForUser(userId, 1) match {
+  def getCurrentForUser(userId: Long): Option[GpsLocation] = getForUser(userId, 1) match {
     case x: List[_] if x.size > 0 => Option(x(0))
-    case _ => None
+    case _ => None 
   }
 
 }

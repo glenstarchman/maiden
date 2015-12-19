@@ -49,14 +49,19 @@ case class Vehicle(override var id: Long=0,
         case _ => Map.empty
       }
     },
-    "currentLocation" -> List(47.67599,-122.36770), //fill this in with Location model
+    "currentLocation" -> {
+      GpsLocation.getCurrentForUser(driverId) match {
+        case Some(c) => List(c.latitude, c.longitude)
+        case _ => List(0f, 0f)
+      }
+    },
     "nextStop" -> Map(
       "id"-> 2, //fill in later
       "name" -> "Olaf's",
       "eta" -> new DateTime().plusMinutes(10).toString //eta as a datetime to the next stop
     ),
     "currentlyPlaying" -> Map(
-      "name" -> "Slayer", 
+      "name" -> "Slayer - Seasons in the Abyss", 
       "thumbnail" -> "https://upload.wikimedia.org/wikipedia/en/1/1b/Slayer_-_Seasons_in_the_Abyss.jpg"
     ),
     "currentPassengers" -> 6 //fill in later

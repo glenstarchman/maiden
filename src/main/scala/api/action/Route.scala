@@ -37,8 +37,14 @@ class RouteInfo extends RouteApi {
       val locs = stops.map(stop => (stop("latitude").toString.toFloat, stop("longitude").toString.toFloat))
       val geometry = Osrm.getRoute(locs)
       val info = Route.get(routeId)
-
-      (R.OK, Map("info" -> info, "stops" -> stops, "geometry" -> geometry))
+      val vehicles = Vehicle.getForRoute(routeId)
+      val ret = Map(
+        "info" -> info,
+        "stops" -> stops,
+        "geometry" -> geometry,
+        "vehicles" -> vehicles
+      )
+      (R.OK, ret) 
     })
   }
 }
@@ -69,6 +75,22 @@ class AllOperatingRoutes extends RouteApi {
   def execute() {
     futureExecute(() => {
       (R.OK, Route.getCurrentlyActive)
+    })
+  }
+}
+
+@First
+@POST("api/route/:id/vehicles")
+@GET("api/route/:id/vehicles")
+@Swagger(
+  Swagger.OperationId("get_vehciles"),
+  Swagger.Summary("retrieves all vehicles on a route"),
+  Swagger.IntPath("id", "The route id")
+)
+class AllRouteVehicles extends RouteApi {
+  def execute() {
+    futureExecute(() => {
+      (R.OK, Vehicle.getForRoute(param[Long]("id")))
     })
   }
 }

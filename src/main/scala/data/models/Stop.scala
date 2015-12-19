@@ -1,6 +1,7 @@
 package com.maiden.data.models
 
 import java.sql.Timestamp
+import org.joda.time._
 import scala.collection.mutable.ListBuffer
 import com.maiden.common.Types._
 import com.maiden.common.converters.Convertable
@@ -22,7 +23,13 @@ case class Stop(var id: Long = 0,
           var thumbnail: String = "",
           var latitude: Float = 0.00f,
           var longitude: Float = 0.00f
-) extends Convertable 
+) extends Convertable {
+  override def extraMap() = Map(
+    "nextArrival" -> new DateTime().plusMinutes(12).toString,
+    "arrivals" -> List("11:15", "11:30", "12:00", "12:30")
+   )
+
+}
 
 object Stop {
 
@@ -49,7 +56,10 @@ object Stop {
         })
       }
     })
-    results.toList
+    results.map(r => r ++ Map(
+      "nextArrival" -> new DateTime().plusMinutes(12).toString,
+      "arrivals" -> List("11:15", "11:30", "12:00", "12:30")
+    )).toList
   }
 }
 

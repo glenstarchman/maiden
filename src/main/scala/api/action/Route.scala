@@ -87,10 +87,10 @@ class AllOperatingRoutes extends RouteApi {
   Swagger.Summary("retrieves all vehicles on a route"),
   Swagger.IntPath("id", "The route id")
 )
-class AllRouteVehicles extends RouteApi {
+class RouteVehicles extends RouteApi {
   def execute() {
     futureExecute(() => {
-      (R.OK, Vehicle.getForRoute(param[Long]("id")))
+      (R.OK, Vehicle.getMinimalForRoute(param[Long]("id")))
     })
   }
 }

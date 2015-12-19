@@ -52,9 +52,10 @@ object AccessLog {
     }
   }
 
-  def logWebSocketAccess(action: Action, beginTimestamp: Long) {
+  def logWebSocketAccess(className: String, action: Action, beginTimestamp: Long) {
     Log.info(msgWithTime(action, beginTimestamp) + extraInfo(action, 0, false))
   }
+
 
   def logOPTIONS(request: HttpRequest) {
     Log.info("OPTIONS " + request.getUri)

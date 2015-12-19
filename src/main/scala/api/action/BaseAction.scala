@@ -12,7 +12,7 @@ import scala.util.{Success, Failure}
 import scala.language.implicitConversions
 import io.netty.channel.ChannelFuture
 import io.netty.handler.codec.http.HttpResponseStatus
-import xitrum.{Action, FutureAction}
+import xitrum.{Action, FutureAction, WebSocketAction}
 import xitrum.view.ScalateEngine
 import xitrum.SkipCsrfCheck
 import org.json4s._
@@ -32,6 +32,10 @@ import com.maiden.data.models.{User, FriendlyId}
 import com.maiden.common.MaidenConfigFactory
 import com.maiden.common.Types._
 import com.maiden.common.exceptions._
+
+trait BaseWebsocketAction extends WebSocketAction with Log {
+
+}
 
 trait BaseAction extends FutureAction with Log with SkipCsrfCheck {
 

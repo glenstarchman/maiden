@@ -67,9 +67,31 @@ case class Vehicle(override var id: Long=0,
     "currentPassengers" -> 6 //fill in later
   )
 
+  def miniMap() = Map(
+    "id" -> id,
+    "currentLocation" -> {
+      GpsLocation.getCurrentForUser(driverId) match {
+        case Some(c) => List(c.latitude, c.longitude)
+        case _ => List(0f, 0f)
+      }
+    },
+    "nextStop" -> Map(
+      "id"-> 2, //fill in later
+      "name" -> "Olaf's",
+      "eta" -> new DateTime().plusMinutes(10).toString //eta as a datetime to the next stop
+    ),
+    "currentlyPlaying" -> Map(
+      "name" -> "Slayer - Seasons in the Abyss", 
+      "thumbnail" -> "https://upload.wikimedia.org/wikipedia/en/1/1b/Slayer_-_Seasons_in_the_Abyss.jpg"
+    ),
+    "currentPassengers" -> 6 //fill in later
+  )
+
 }
 
 object Vehicle extends CompanionTable[Vehicle] {
+
+
   def getForRoute(routeId: Long) = {
     val vehicles = fetch {
       from(Vehicles)(v => 
@@ -78,6 +100,16 @@ object Vehicle extends CompanionTable[Vehicle] {
     }
     vehicles.par.map(v => v.asMap).toList
   }
+
+  def getMinimalForRoute(routeId: Long) = {
+    val vehicles = fetch {
+      from(Vehicles)(v => 
+      where(v.routeId === routeId and v.active === true)
+      select(v))
+    }
+    vehicles.par.map(v => v.miniMap).toList
+  }
+
 
 }
 

@@ -19,10 +19,8 @@ object Osrm {
      }.mkString("&") + s"&loc=${locs(0)._2},${locs(0)._1}"
 
      val url = s"${endpoint}?${locParams}&compression=false"
-     println(url)
      val http = new HttpClient(url)
      val p = http.fetchAsMap()
-     println(p)
      val geom = p("route_geometry").asInstanceOf[List[List[(Float, Float)]]]
      geom ++ List(geom(0))
   }

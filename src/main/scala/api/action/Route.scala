@@ -36,8 +36,9 @@ class RouteInfo extends RouteApi {
       val stops = Stop.getForRoute(routeId)
       val locs = stops.map(stop => (stop("latitude").toString.toFloat, stop("longitude").toString.toFloat))
       val geometry = Osrm.getRoute(locs)
+      val info = Route.get(routeId)
 
-      (R.OK, Map("stops" -> stops, "geometry" -> geometry))
+      (R.OK, Map("info" -> info, "stops" -> stops, "geometry" -> geometry))
     })
   }
 }

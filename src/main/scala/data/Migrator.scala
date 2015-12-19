@@ -55,7 +55,7 @@ object Migrate {
   }
 
 
-  lazy val migrationPath = s"${System.getProperty("user.dir")}/migrations"
+  lazy val migrationPath = s"${System.getProperty("user.dir")}/migrations/src/main/scala"
   private def checkMigrationExists(name:String) = {
     val glob = s"*_${name}.scala"
     val filter: FilenameFilter = new WildcardFileFilter(glob)

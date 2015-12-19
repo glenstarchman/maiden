@@ -220,6 +220,7 @@ object MaidenSchema extends Schema with  PrimitiveTypeMode with Log {
   val Taggables = table[Taggable]
   val Routes = table[Route]
   val Vehicles = table[Vehicle]
+  val GpsLocations = table[GpsLocation]
 
   /* for lookup */
   val lookup = Map(
@@ -231,7 +232,8 @@ object MaidenSchema extends Schema with  PrimitiveTypeMode with Log {
     "FriendlyId" -> FriendlyIds,
     "Taggable" -> Taggables,
     "Route" -> Routes,
-    "Vehicle" -> Vehicles
+    "Vehicle" -> Vehicles,
+    "GpsLocation" -> GpsLocations
   )
 
 }

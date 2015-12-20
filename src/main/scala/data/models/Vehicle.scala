@@ -109,8 +109,6 @@ object Vehicle extends CompanionTable[Vehicle] {
     }
     vehicles.par.map(v => v.miniMap).toList
   }
-
-
 }
 
 

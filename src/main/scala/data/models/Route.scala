@@ -12,6 +12,7 @@ import MaidenSchema._
 import com.maiden.common.MaidenCache._
 import com.maiden.common.exceptions._
 import com.maiden.common.Codes._
+import com.maiden.common.Osrm
 
 
 case class Route(override var id: Long=0, 
@@ -32,6 +33,13 @@ case class Route(override var id: Long=0,
 }
 
 object Route extends CompanionTable[Route] {
+
+  def getRouteGeometry(routeId: Long) = {
+    val stops = Stop.getForRoute(routeId)
+    val locs = stops.map(stop => (stop("latitude").toString.toFloat, stop("longitude").toString.toFloat))
+    val geometry = Osrm.getRoute(locs)
+    (geometry, stops)
+  }
 
   def getAllActiveRoutes() = fetch {
     from(Routes)(r => 

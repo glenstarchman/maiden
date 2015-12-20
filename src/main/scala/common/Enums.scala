@@ -62,6 +62,7 @@ object Enums {
     //to cancel mid-ride
     val RideTerminatedNoCharge = Value(-10, "Ride Terminated Without Charge")
     val RideTerminatedWithPenalty = Value(-11, "Ride Terminated With Penalty")
+   val OutsideOperatingHours = Value(-12, "Reservation Attempted Outside of Operating Hours")
 
   }
 
@@ -85,6 +86,7 @@ object Enums {
     val PreferredCustomer = Value(2, "Preffered Customer")
     val MonthlyMembership = Value(3, "Monthly Membership")
     val DayPass = Value(4, "Day Pass")
+    val NoDiscount = Value(5, "No Discount")
     val WeekendPass = Value(5, "Weekend Pass")
   }
 

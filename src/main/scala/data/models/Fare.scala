@@ -8,11 +8,11 @@ import com.maiden.common.MaidenCache._
 import com.maiden.data.ConnectionPool
 import com.maiden.common.exceptions._
 import com.maiden.common.Codes._
-import com.maiden.common.Enums.FareType._
+import com.maiden.common.Enums._
 
 case class Fare(override var id: Long=0, 
-                var fareType: FareType = Fixed,
-
+                var fareType: Int = FareType.Fixed.id,
+                var amount: Float = 0.00f, 
                 var createdAt: Timestamp=new Timestamp(System.currentTimeMillis), 
                 var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis)) 
   extends BaseMaidenTableWithTimestamps {

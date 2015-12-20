@@ -33,10 +33,11 @@ class RouteInfo extends RouteApi {
   def execute() {
     futureExecute(() => {
       val routeId = param[Long]("id")
-      val stops = Stop.getForRoute(routeId)
-      val locs = stops.map(stop => (stop("latitude").toString.toFloat, stop("longitude").toString.toFloat))
-      val geometry = Osrm.getRoute(locs)
-      val info = Route.get(routeId)
+      //returns Tuple2[geometry, stops]
+      val data = Route.getRouteGeometry(routeId)
+      val (geometry, stops) = data 
+      //val stops = data._2 
+      val info = Route.get(routeId).map(_.asMap)
       val vehicles = Vehicle.getForRoute(routeId)
       val ret = Map(
         "info" -> info,
@@ -88,6 +89,7 @@ class AllOperatingRoutes extends RouteApi {
   Swagger.IntPath("id", "The route id")
 )
 class RouteVehicles extends RouteApi {
+  //this is a polled method so we return only minimal info
   def execute() {
     futureExecute(() => {
       (R.OK, Vehicle.getMinimalForRoute(param[Long]("id")))

@@ -26,6 +26,7 @@ case class Stop(var id: Long = 0,
           var longitude: Float = 0.00f
 ) extends Convertable {
   override def extraMap() = Map(
+    //these need to be calculated
     "nextArrival" -> new DateTime().plusMinutes(12).toString,
     "arrivals" -> List("11:15", "11:30", "12:00", "12:30")
    )

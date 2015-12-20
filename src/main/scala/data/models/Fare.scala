@@ -18,3 +18,7 @@ case class Fare(override var id: Long=0,
   extends BaseMaidenTableWithTimestamps {
 
 } 
+
+object Fare extends CompanionTable[Fare] {
+
+}

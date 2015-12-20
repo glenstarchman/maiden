@@ -119,6 +119,7 @@ lazy val api = (project in (file(".")))
       "com.mindscapehq" % "core" % "2.0.0",
       "net.sf.uadetector" % "uadetector-core" % "0.9.22",
       "net.sf.uadetector" % "uadetector-resources" % "2014.10",
+      "com.vividsolutions" % "jts" % "1.13",
       //"com.cloudinary" % "cloudinary-core" % "1.2.2",
       //"com.cloudinary" % "cloudinary-http44" % "1.2.2",
       //"com.github.detro.ghostdriver" % "phantomjsdriver" % "1.1.0",

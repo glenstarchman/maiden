@@ -22,9 +22,11 @@ case class Stop(var id: Long = 0,
           var description: String = "",
           var details: String = "",
           var thumbnail: String = "",
-          var latitude: Float = 0.00f,
-          var longitude: Float = 0.00f
-) extends Convertable {
+          val geom: String = "",
+          var createdAt: Timestamp=new Timestamp(System.currentTimeMillis), 
+          var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis)) 
+
+  extends BaseMaidenTableWithTimestamps {
   override def extraMap() = Map(
     //these need to be calculated
     "nextArrival" -> new DateTime().plusMinutes(12).toString,
@@ -33,7 +35,7 @@ case class Stop(var id: Long = 0,
 
 }
 
-object Stop {
+object Stop extends CompanionTable[Stop] {
 
   def getAllStops(routeId: Option[Long]): List[Map[String, Any]] = {
     var sql = routeId match {

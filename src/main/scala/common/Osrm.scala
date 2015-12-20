@@ -29,6 +29,17 @@ object Osrm {
 
   }
 
+  def getDistanceTable(start: (Float, Float), points: List[(Float,Float)]) = {
+    val endpoint = buildEndpoint("table")
+    val locParams = points.map { case (lat, lon) => 
+      s"loc=${lon},${lat}"
+     }.mkString("&") 
+     val url = s"${endpoint}?loc=${start._1},${start._2}&${locParams}"
+     val http = new HttpClient(url)
+     val p = http.fetchAsMap()
+     p("distance_table").asInstanceOf[List[List[BigInt]]]
+  }
+
 }
 
 

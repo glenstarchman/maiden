@@ -94,3 +94,21 @@ class RouteVehicles extends RouteApi {
     })
   }
 }
+
+@First
+@POST("api/route/closest/stop")
+@GET("api/route/closest/stop")
+@Swagger(
+  Swagger.OperationId("get_closest_stop"),
+  Swagger.Summary("gets the closest stop to a location"),
+  Swagger.IntQuery("latitude", "latitude"),
+  Swagger.IntQuery("longitude", "longitude")
+)
+class RouteClosestStop extends RouteApi {
+  def execute() {
+    futureExecute(() => {
+      (R.OK, Stop.getClosestStop(param[Float]("latitude"),
+                                 param[Float]("longitude")))
+    })
+  }
+}

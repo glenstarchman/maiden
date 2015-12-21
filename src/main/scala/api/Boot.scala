@@ -7,6 +7,7 @@ package com.maiden.api
 import scala.util.Properties
 import xitrum.{Server, Config}
 import com.maiden.common.MaidenConfigFactory
+import com.maiden.actors.DispatchActor
 
 object Boot extends App {
   override def main(args: Array[String]) {
@@ -22,7 +23,10 @@ object Boot extends App {
         routes.removeByPrefix("/template")
       }
     }
+    println("starting actors...")
+    DispatchActor.start()
     start()
+   
   }
 
   def start() {

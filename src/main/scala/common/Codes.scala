@@ -60,45 +60,19 @@ object Codes {
 
   case object PASSWORD_RESET_CODE_INVALID extends StatusCode(-114, "PASSWORD_RESET_CODE_INVALID", "The password reset code is invalid")
 
-  /* ROLE = 200 */
-  case object ROLE_CREATED extends StatusCode(200, "ROLE_CREATED")
-  case object ROLE_UPDATED extends StatusCode(201, "ROLE_UPDATED")
-  case object ROLE_CREATION_FAILED extends StatusCode(-201, "ROLE_CREATION_FAILED")
 
   /* PROFILE = 300 */
   case object PRIVATE_PROFILE extends StatusCode(-301, "PRIVATE_PROFILE", "The profile is marked as private")
 
+  case object UNKNOWN_IMAGE_TYPE extends StatusCode(-404, "UNKNOWN_IMAGE_TYPE", "The uploaded file is of an unknown type")
+  case object FILE_UPLOAD_FAILED extends StatusCode(-405, "FILE_UPLOAD_FAILED", "The was an issue with the file upload")
+  case object INVITE_CODE_INVALID extends StatusCode(-406, "INVITE_CODE_INVALID", "The invite code is invalid")
+  case object INVITE_CODE_MISSING extends StatusCode(-407, "INVITE_CODE_MISSING", "The invite code is missing")
 
-  /* PROJECT = 400 */
+  /* TRIP = 500 */
+  case object TRIP_NOT_FOUND extends StatusCode(-501, "TRIP_NOT_FOUND", "The trip cannot be found")
+  case object INVALID_RIDE_STATE extends StatusCode(-502, "INVALID_RIDE_STATE", "The ride state is invalid")
 
-  case object PROJECT_NOT_FOUND extends StatusCode(-401, "PROJECT_NOT_FOUND", "The specified project could not be found")
-
-  case object PROJECT_DATA_MISSING extends StatusCode(-402, "PROJECT_DATA_MISSING", "The project could not be created because data is missing")
-
-  case object PROJECT_USER_UNAUTHORIZED extends StatusCode(-403, "PROJECT_USER_UNAUTHORIZED", "The user is not authorized to perform the given action on the given project")
-
-  case object PROJECT_UNKNOWN_IMAGE_TYPE extends StatusCode(-404, "PROJECT_UNKNOWN_IMAGE_TYPE", "The uploaded file is of an unknown type")
-  case object PROJECT_FILE_UPLOAD_FAILED extends StatusCode(-405, "PROJECT_FILE_UPLOAD_FAILED", "The was an issue with the file upload")
-  case object PROJECT_INVITE_CODE_INVALID extends StatusCode(-406, "PROJECT_INVITE_CODE_INVALID", "The invite code is invalid")
-  case object PROJECT_INVITE_CODE_MISSING extends StatusCode(-407, "PROJECT_INVITE_CODE_MISSING", "The invite code is missing")
-  case object PROJECT_TYPE_INVALID extends StatusCode(-408, "PROJECT_TYPE_INVALID", "The type of the project is invalid")
-  
-
-  /* CONTRIBUTER REQUEST = 500 */
-  case object NO_VALID_REQUESTEES extends StatusCode(-501, "NO_VALID_REQUESTEES", "The contributor request did not contain any valid requestees")
-
-  import com.maiden.macros.EnumerationMacros._
-  val statusCodes: Set[StatusCode] = sealedInstancesOf[StatusCode]
-  val statusCodesAsJson: JSONArray = 
-    JSONArray(statusCodes.toList.sortBy(_.code).map(_.asJson()))
-
-
-  /* TEAM/CONTRIBUTION = 500 */
-  case object CONTRIBUTION_CREATED extends StatusCode(500, "CONTRIBUTION_CREATED")
-  case object CONTRIBUTION_DATA_MISSING extends StatusCode(-501, "CONTRIBUTION_DATA_MISSING")
-  case object TEAM_CREATED extends StatusCode(501, "TEAM_CREATED")
-  case object TEAM_MISSING_DATA extends StatusCode(-501, "TEAM_MISSING_DATA")
-  case object TEAM_MEMBER_INVALID_DATA extends StatusCode(-502, "TEAM_MEMBER_INVALID_DATA")
 
 
   /* GENERAL FAILURES = -600 */
@@ -113,4 +87,8 @@ object Codes {
 
   case object MISSING_PARAMETER extends StatusCode(-607, "MISSING_PARAMETER", "A required parameter is missing")
 
+  import com.maiden.macros.EnumerationMacros._
+  val statusCodes: Set[StatusCode] = sealedInstancesOf[StatusCode]
+  val statusCodesAsJson: JSONArray = 
+    JSONArray(statusCodes.toList.sortBy(_.code).map(_.asJson()))
 }

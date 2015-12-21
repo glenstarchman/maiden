@@ -10,9 +10,9 @@ class Migrate_20151220123912_CreateTrip extends Migration {
     createTable(table) { t =>
       t.bigint("id", AutoIncrement, PrimaryKey)
       t.bigint("user_id", NotNull)
-      t.bigint("driver_id", NotNull)
-      t.bigint("vehicle_id", NotNull)
-      t.bigint("route_id", NotNull)
+      t.bigint("driver_id")
+      t.bigint("vehicle_id")
+      t.bigint("route_id")
       t.bigint("fare_id", NotNull)
       t.integer("reservation_type", NotNull)
       t.integer("ride_state", NotNull)

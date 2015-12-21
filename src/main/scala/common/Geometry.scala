@@ -1,9 +1,8 @@
 package com.maiden.common
 
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.PrecisionModel;
+import com.vividsolutions.jts.geom._
 import com.vividsolutions.jts.io.WKBReader;
+import org.opentripplanner.common.geometry.SphericalDistanceLibrary
 
 
 object Geo {
@@ -25,6 +24,27 @@ object Geo {
     val wk = new WKBReader(gm)
     val geom = wk.read(hex2Bytes(wkb)).getCoordinate
     Map("latitude" -> geom.y, "longitude" -> geom.x)
+  }
+
+  def makePoint(lat: Float, lng: Float) = gm.createPoint(new Coordinate(lat,lng))
+
+  def generateBoundingBox(lat: Float, lng: Float, 
+      latDistance: Int, lonDistance: Int) = {
+
+    val mPerDegreeLat = 111111.111111;
+    val lonScale = Math.cos(Math.PI * lat / 180);
+    val latExpand = latDistance / mPerDegreeLat;
+    val lonExpand = (lonDistance / mPerDegreeLat) / lonScale;
+    val point = makePoint(lat, lng)
+    val envelope = point.getEnvelopeInternal()   
+    envelope.expandBy(
+      lonExpand, 
+      latExpand
+    )
+    val geometry = gm.toGeometry(envelope)
+    geometry.getCoordinates().map(geom =>
+      List(geom.x, geom.y)
+    ).toList
   }
 
 

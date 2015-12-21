@@ -27,7 +27,7 @@ class UnauthorizedException(
 
 class InvalidInviteCodeException(
     message: String = "The Invite Code Was Invalid", 
-    code: StatusCode = R.PROJECT_INVITE_CODE_INVALID,
+    code: StatusCode = R.INVITE_CODE_INVALID,
     exc: Option[Exception] = None)
   extends MaidenException(message, code, exc=exc)
 
@@ -36,13 +36,6 @@ class InvalidPasswordResetCodeException(
     code: StatusCode = R.PASSWORD_RESET_CODE_INVALID,
     exc: Option[Exception] = None)
   extends MaidenException(message, code, exc=exc)
-
-class NoValidRequesteesException(
-    message: String = "No valid requestees were passed in", 
-    code: StatusCode = R.NO_VALID_REQUESTEES,
-    exc: Option[Exception] = None)
-  extends MaidenException(message, code, exc=exc)
-
 
 class InvalidSocialCredentialsException(
     message: String = "Invalid Social Credentials", 
@@ -76,16 +69,9 @@ class CreateOrUpdateFailedException(
     exc: Option[Exception] = None) 
   extends MaidenException(message, code, httpStatus, exc)
 
-class InvalidProjectTypeException(
-    message: String = "The type of the project is invalid", 
-    code: StatusCode = R.PROJECT_TYPE_INVALID,
-    httpStatus: H = H.BAD_REQUEST,
-    exc: Option[Exception] = None) 
-  extends MaidenException(message, code, httpStatus, exc)
-
-class NoProjectException(
-    message: String = "The project cannot be found", 
-    code: StatusCode = R.PROJECT_NOT_FOUND,
+class NoTripException(
+    message: String = "The trip does not exist", 
+    code: StatusCode = R.TRIP_NOT_FOUND,
     httpStatus: H = H.NOT_FOUND,
     exc: Option[Exception] = None) 
   extends MaidenException(message, code, httpStatus, exc)
@@ -97,55 +83,29 @@ class NoUserException(
     exc: Option[Exception] = None) 
   extends MaidenException(message, code, httpStatus, exc)
 
-
-class InvalidUrlException(
-    message: String = "The URL is not in a valid format", 
-    code: StatusCode = R.GENERIC_ERROR,
-    httpStatus: H = H.BAD_REQUEST,
-    exc: Option[Exception] = None) 
-  extends MaidenException(message, code, httpStatus, exc)
-
-class UrlNotFoundException(
-    message: String = "The given URL cannot be found", 
-    code: StatusCode = R.GENERIC_ERROR,
-    httpStatus: H = H.BAD_REQUEST,
-    exc: Option[Exception] = None) 
-  extends MaidenException(message, code, httpStatus, exc)
 class FileUploadFailedException(
     message: String = "Unable to upload file", 
-    code: StatusCode = R.PROJECT_FILE_UPLOAD_FAILED,
+    code: StatusCode = R.FILE_UPLOAD_FAILED,
     httpStatus: H = H.INTERNAL_SERVER_ERROR,
     exc: Option[Exception] = None) 
   extends MaidenException(message, code, httpStatus, exc)
 
 class UnknownImageTypeException(
     message: String = "Unknown File Type", 
-    code: StatusCode = R.PROJECT_UNKNOWN_IMAGE_TYPE,
+    code: StatusCode = R.UNKNOWN_IMAGE_TYPE,
     httpStatus: H = H.BAD_REQUEST,
     exc: Option[Exception] = None) 
   extends MaidenException(message, code, httpStatus, exc)
 
+class ExternalResponseException(
+  message: String = "The external resource returned an unparseable result",    
+  code: StatusCode = R.GENERIC_ERROR,
+  exc: Option[Exception] = None) 
+  extends MaidenException(message, code, exc = exc)
+
 class S3UploadTimeoutException(
     message: String = "The Upload Timed Out", 
     code: StatusCode = R.S3_UPLOAD_TIMED_OUT,
-    exc: Option[Exception] = None) 
-  extends MaidenException(message, code, exc = exc)
-
-class OembedTimeoutException(
-    message: String = "Getting Oembed Timed Out", 
-    code: StatusCode = R.OEMBED_TIMED_OUT,
-    exc: Option[Exception] = None) 
-  extends MaidenException(message, code, exc = exc)
-
-class InvalidOembedFormatException(
-    message: String = "The Oembed JSON is invalid", 
-    code: StatusCode = R.INVALID_OEMBED_FORMAT,
-    exc: Option[Exception] = None)
-  extends MaidenException(message, code, exc = exc)
-
-class InvalidOembedProviderException(
-    message: String = "The Oembed provider or URL is invalid", 
-    code: StatusCode = R.INVALID_OEMBED_PROVIDER,
     exc: Option[Exception] = None) 
   extends MaidenException(message, code, exc = exc)
 
@@ -167,20 +127,23 @@ class MissingParameterException(
     exc: Option[Exception] = None) 
   extends MaidenException(message, code, exc = exc)
 
-class ExternalResponseException(
-    message: String = "The external resource returned an unparseable result", 
-    code: StatusCode = R.GENERIC_ERROR,
-    exc: Option[Exception] = None) 
-  extends MaidenException(message, code, exc = exc)
 
-class PhantomResponseException(
-    message: String = "PhantomJS returned an invalid result", 
+class InvalidUrlException(
+    message: String = "The URL is not in a valid format",
     code: StatusCode = R.GENERIC_ERROR,
-    exc: Option[Exception] = None) 
-  extends MaidenException(message, code, exc = exc)
+    httpStatus: H = H.BAD_REQUEST,
+    exc: Option[Exception] = None)
+  extends MaidenException(message, code, httpStatus, exc)
+  
+class UrlNotFoundException(
+    message: String = "The given URL cannot be found",
+    code: StatusCode = R.GENERIC_ERROR,
+    httpStatus: H = H.BAD_REQUEST,
+    exc: Option[Exception] = None)
+  extends MaidenException(message, code, httpStatus, exc)
 
 class ExternalResponseTimeoutException(
-    message: String = "Fetching the external resourcei timed out", 
+    message: String = "Fetching the external resourcei timed out",
     code: StatusCode = R.GENERIC_ERROR,
     exc: Option[Exception] = None) 
   extends MaidenException(message, code, exc = exc)
@@ -194,5 +157,11 @@ class ResponseException(
 class DatasourceNotAvailableException(
     message: String = "FATAL: Unable to connect to data source", 
     code: StatusCode = R.GENERIC_ERROR,
+    exc: Option[Exception] = None) 
+  extends MaidenException(message, code, exc = exc)
+
+class InvalidRideStateException(
+    message: String = "Invalid Ride State", 
+    code: StatusCode = R.INVALID_RIDE_STATE,
     exc: Option[Exception] = None) 
   extends MaidenException(message, code, exc = exc)

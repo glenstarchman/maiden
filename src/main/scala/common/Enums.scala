@@ -38,12 +38,13 @@ object Enums {
   object RideStateType extends Enumeration {
     type RideStateType = Value
     //successful states
-    val FindingDriver = Value(1, "Finding Driver")
-    val DriverAccepted = Value(2, "Driver Accepted")
-    val DriverOnWay = Value(3, "Driver On Way")
-    val RideUnderway = Value(4, "Ride Underway")
-    val RideCompleted = Value(5, "Ride Completed")
-    val RideRebooked = Value(6, "Ride Rebooked")
+    val Initial = Value(1, "Initial")
+    val FindingVehicle = Value(2, "Finding Vehicle")
+    val VehicleAccepted = Value(3, "Vehicle Accepted")
+    val VehicleOnWay = Value(4, "Vehicle On Way")
+    val RideUnderway = Value(5, "Ride Underway")
+    val RideCompleted = Value(6, "Ride Completed")
+    val RideRebooked = Value(7, "Rebooked")
 
     //exceptions
     val DriverCancelled = Value(-1, "Driver Cancelled")
@@ -70,13 +71,13 @@ object Enums {
     type PaymentStateType = Value
     val Pending = Value(1, "Pending")
     val Success = Value(2, "Success")
-    val CompedByDriver = Value(4, "Comped By Driver")
-    val CompedByCompany = Value(5, "Comped By Company")
-    val CompedByPromoCode = Value(6, "Comped By Promo Code")
-    val TransferNoCharge = Value(7, "Transfer (No Charge)")
+    val CompedByDriver = Value(3, "Comped By Driver")
+    val CompedByCompany = Value(4, "Comped By Company")
+    val CompedByPromoCode = Value(5, "Comped By Promo Code")
+    val TransferNoCharge = Value(6, "Transfer (No Charge)")
 
     //signal to retry in 24 hours
-    val FailureRetry = Value(1, "Failure (Retry Pending")
+    val FailureRetry = Value(-1, "Failure (Retry Pending")
     val Failure = Value(-2, "Failure")
   }
 
@@ -87,7 +88,7 @@ object Enums {
     val MonthlyMembership = Value(3, "Monthly Membership")
     val DayPass = Value(4, "Day Pass")
     val NoDiscount = Value(5, "No Discount")
-    val WeekendPass = Value(5, "Weekend Pass")
+    val WeekendPass = Value(6, "Weekend Pass")
   }
 
   object PassType extends Enumeration {

@@ -16,6 +16,7 @@ val commonSettings = Seq(
   resolvers += Resolver.sonatypeRepo("releases"),
   resolvers += "jBCrypt Repository" at "http://repo1.maven.org/maven2/org/",
   resolvers += "RoundEights" at "http://maven.spikemark.net/roundeights",
+  resolvers += "Conveyal Maven Repository" at "http://maven.conveyal.com",
   libraryDependencies ++= Seq(
     "commons-io" % "commons-io" % "2.4",
     "joda-time" % "joda-time" % "2.8.1",
@@ -120,6 +121,7 @@ lazy val api = (project in (file(".")))
       "net.sf.uadetector" % "uadetector-core" % "0.9.22",
       "net.sf.uadetector" % "uadetector-resources" % "2014.10",
       "com.vividsolutions" % "jts" % "1.13",
+      "org.opentripplanner" % "otp" % "0.13.0",
       //"com.cloudinary" % "cloudinary-core" % "1.2.2",
       //"com.cloudinary" % "cloudinary-http44" % "1.2.2",
       //"com.github.detro.ghostdriver" % "phantomjsdriver" % "1.1.0",

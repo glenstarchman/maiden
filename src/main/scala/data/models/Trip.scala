@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015. Maiden, Inc All Rights Reserved
- */
+*/
 
 package com.maiden.data.models
 
@@ -20,7 +20,7 @@ case class Trip(override var id: Long=0,
                 var routeId: Long = 0,
                 var fareId: Long = 0,
                 var reservationType: Int = ReservationType.Reserved.id,
-                var rideState: Int = RideStateType.FindingDriver.id,
+                var rideState: Int = RideStateType.Initial.id,
                 var paymentState: Int = PaymentStateType.Pending.id,
                 var discountType: Int = DiscountType.NoDiscount.id,
                 var isTransfer: Boolean = false,
@@ -30,9 +30,7 @@ case class Trip(override var id: Long=0,
                 var pickupTime: Timestamp = null,
                 var dropoffTime: Timestamp = null,
                 var cancellationTime: Timestamp = null,
-                //var pickupTime: Option[Timestamp] = None,
-                //var dropoffTime: Option[Timestamp] = None,
-                //var cancellationTime: Option[Timestamp] = None,
+                var isProcessing: Boolean = false,
                 var createdAt: Timestamp=new Timestamp(System.currentTimeMillis), 
                 var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis)) 
   extends BaseMaidenTableWithTimestamps {
@@ -42,21 +40,53 @@ case class Trip(override var id: Long=0,
 
 object Trip extends CompanionTable[Trip] {
 
+
+  def create(userId: Long, reservationType: Int, 
+             pickupStop: Long, dropoffStop: Long) = {
+    val trip = Trip(
+      userId = userId,
+      reservationType = reservationType,
+      pickupStop = pickupStop,
+      dropoffStop = dropoffStop,
+      rideState = RideStateType.Initial.id
+    )
+
+    withTransaction {
+      Trips.upsert(trip)
+    }
+  }
+
+  def updateState(tripId: Long, state: Int) = {
+    //need to validate the transition and do other stuff here
+    withTransaction {
+      Trip.get(tripId) match {
+        case Some(t) => {
+          t.rideState = state
+          Trips.update(t)
+          t
+        }
+        case _ => throw(new NoTripException()) 
+      }
+    }
+  }
+
   def getFullDetails(tripId: Long) = { 
     val trip = fetchOne {
-      from(Trips, Users.leftOuter, Users.leftOuter, Vehicles.leftOuter,
-        Routes.leftOuter, Fares.leftOuter, Stops.leftOuter, Stops.leftOuter)((trip, user, driver, vehicle, route, fare, pickup, dropoff) =>
-      where(
-        trip.id === tripId and
-        trip.userId === user.map(_.id) and
-        trip.driverId === driver.map(_.id) and
-        trip.vehicleId === vehicle.map(_.id) and
-        trip.routeId === route.map(_.id) and 
-        trip.fareId === fare.map(_.id) and
-        trip.pickupStop === pickup.map(_.id) and
+      join(Trips, Users.leftOuter, Users.leftOuter, Vehicles.leftOuter,
+          Routes.leftOuter, Fares.leftOuter, 
+          Stops.leftOuter, Stops.leftOuter)(
+            (trip, user, driver, vehicle, route, fare, pickup, dropoff) =>
+      where(trip.id === tripId)
+      select(trip, user, driver, vehicle, route, fare, pickup, dropoff)
+      on(
+        trip.userId === user.map(_.id),
+        trip.driverId === driver.map(_.id),
+        trip.vehicleId === vehicle.map(_.id),
+        trip.routeId === route.map(_.id),
+        trip.fareId === fare.map(_.id),
+        trip.pickupStop === pickup.map(_.id),
         trip.dropoffStop === dropoff.map(_.id)
-      )
-      select(trip, user, driver, vehicle, route, fare, pickup, dropoff))
+      ))
     }
 
     trip match {
@@ -71,6 +101,42 @@ object Trip extends CompanionTable[Trip] {
       )
       case _ => Map[String, Any]()
     }
+  }
+
+  def getByCriteria(userId: Option[Long] = None,
+                    driverId: Option[Long] = None,
+                    vehicleId: Option[Long] = None,
+                    pickupStop: Option[Long] = None,
+                    dropoffStop: Option[Long] = None,
+                    rideState: Option[Int] = None,
+                    paymentState: Option[Int] = None,
+                    isProcessing: Option[Boolean] = None) = {
+
+    fetch {
+      from(Trips)(t => 
+      where(
+        (t.userId === userId.?) and
+        (t.driverId === driverId.?) and
+        (t.vehicleId === vehicleId.?) and
+        (t.pickupStop === pickupStop.?) and
+        (t.dropoffStop === dropoffStop.?) and
+        (t.rideState === rideState.?) and
+        (t.paymentState === paymentState.?) and
+        (t.isProcessing === isProcessing.?)
+      )
+      select(t))
+    }
+  }
+
+  def getPending() = getByCriteria(rideState = Option( RideStateType.Initial.id))
+                         
+
+  //grab all trips that need to be assigned
+  def assignVehicle() = {
+    val trips = getByCriteria(
+      rideState = Option(RideStateType.Initial.id)
+    ) 
+
   }
 
 }

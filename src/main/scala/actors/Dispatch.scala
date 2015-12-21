@@ -42,7 +42,11 @@ object DispatchActor {
                 //this is where we perform our magic
                 Trip.setProcessing(trip.id, true)
                 Trip.updateState(trip.id, RideStateType.FindingVehicle.id)
-                Trip.assignVehicle(trip)
+                if (trip.reservationType == ReservationType.OnDemand.id) {
+                  Trip.assignVehicleForOnDemand(trip)
+                } else {
+                  Trip.assignVehicleForReservation(trip)
+                }
               })
               toggleState("rideState")
             }

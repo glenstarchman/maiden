@@ -34,6 +34,50 @@ case class Route(override var id: Long=0,
 
 object Route extends CompanionTable[Route] {
 
+  def getStops(routeId: Long) = fetch {
+    from(Stops)(s => 
+    where(s.routeId === routeId)
+    select(s)
+    orderBy(s.stopOrder))
+  }
+
+  def getStopCount(routeId: Long) = {
+    fetchOne {
+      from(Stops)(s => 
+      where(s.routeId === routeId)
+      compute(count(s.routeId)))
+    }.head.measures
+  }
+
+  //get a list of all stops between start and end
+  def stopsBetween(pickup: Stop, dropoff: Stop) = {
+
+    val stopCount = getStopCount(pickup.routeId)
+
+    if (pickup.stopOrder < dropoff.stopOrder) {
+      fetch {
+        from(Stops)(s => 
+        where(s.stopOrder.between(pickup.stopOrder, dropoff.stopOrder))
+        select(s)
+        orderBy(s.stopOrder))
+      }
+    } else {
+      //we may be going backward
+      fetch {
+        from(Stops)(s => 
+        where(s.stopOrder.between(pickup.stopOrder, stopCount))
+        select(s)
+        orderBy(s.stopOrder))
+      } ++ 
+      fetch {
+        from(Stops)(s => 
+        where(s.stopOrder lte dropoff.stopOrder)
+        select(s)
+        orderBy(s.stopOrder))
+      }
+    }
+
+  }
   def getRouteGeometry(routeId: Long) = {
     val stops = Stop.getForRoute(routeId)
     val locs = stops.map(stop => (stop("latitude").toString.toFloat, stop("longitude").toString.toFloat))

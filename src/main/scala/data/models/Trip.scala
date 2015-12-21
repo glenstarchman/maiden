@@ -5,6 +5,7 @@
 package com.maiden.data.models
 
 import java.sql.Timestamp
+import scala.collection.mutable.{Map => MMap}
 import org.joda.time._
 import com.maiden.common.Types._
 import MaidenSchema._
@@ -21,7 +22,7 @@ case class Trip(override var id: Long=0,
                 var vehicleId: Long = 0,
                 var routeId: Long = 0,
                 var fareId: Long = 0,
-                var reservationType: Int = ReservationType.Reserved.id,
+                var reservationType: Int = ReservationType.OnDemand.id,
                 var rideState: Int = RideStateType.Initial.id,
                 var paymentState: Int = PaymentStateType.Pending.id,
                 var discountType: Int = DiscountType.NoDiscount.id,
@@ -128,7 +129,8 @@ object Trip extends CompanionTable[Trip] {
                     dropoffStop: Option[Long] = None,
                     rideState: Option[Int] = None,
                     paymentState: Option[Int] = None,
-                    isProcessing: Option[Boolean] = None) = {
+                    isProcessing: Option[Boolean] = None,
+                    reservationTime: Option[Timestamp] = None) = {
 
     fetch {
       from(Trips)(t => 
@@ -140,7 +142,8 @@ object Trip extends CompanionTable[Trip] {
         (t.dropoffStop === dropoffStop.?) and
         (t.rideState === rideState.?) and
         (t.paymentState === paymentState.?) and
-        (t.isProcessing === isProcessing.?)
+        (t.isProcessing === isProcessing.?) and
+        (t.reservationTime === reservationTime) //BUG
       )
       select(t))
     }
@@ -150,13 +153,110 @@ object Trip extends CompanionTable[Trip] {
     rideState = Option( RideStateType.Initial.id),
     isProcessing = Option(false)
   )
+
+  def getStops(pickupId: Long, dropoffId: Long) = fetchOne {
+    from(Stops, Stops)((pickup, dropoff) =>
+    where(pickup.id === pickupId and dropoff.id === dropoffId)
+    select(pickup, dropoff))
+  }
+
+  def getOccupiedTripsByVehicle(vehicleId: Long) = {
+
+    val validStates = List(
+      RideStateType.VehicleAccepted.id,
+      RideStateType.VehicleOnWay.id,
+      RideStateType.RideUnderway.id
+    )
+
+    //need to add a time restriction here for reserved rides
+    //that are far in the future
+    fetch {
+      from(Trips)(t =>
+      where(
+        (t.vehicleId === vehicleId) and
+        (t.rideState in validStates)
+      )
+      select(t))
+    }
+  }
+
+
+  def buildOccupancyTable(stops: List[Stop], trips: List[Trip], occupancy: Int) = {
+    var table = MMap[Long, Int]()
+    stops.foreach(s => table(s.id) = occupancy)
+    trips.foreach(t => {
+      val pickup = stops.filter(_.id == t.pickupStop).head
+      val dropoff = stops.filter(_.id == t.dropoffStop).head
+      getInBetweenStops(stops, pickup, dropoff).foreach(s => 
+        table(s.id) = table(s.id) - 1
+      )
+    })
+    table
+  }
+  
+  def getInBetweenStops(routeStops: List[Stop], pickup: Stop, dropoff: Stop) = {
+    if (pickup.stopOrder < dropoff.stopOrder) {
+      routeStops.filter(f => 
+          f.stopOrder >= pickup.stopOrder &&
+          f.stopOrder <= dropoff.stopOrder
+       )
+    } else {
+      routeStops.filter(f => f.stopOrder >= pickup.stopOrder)
+        .sortBy(_.stopOrder) ++ 
+      routeStops.filter(f => f.stopOrder <= dropoff.stopOrder)
+        .sortBy(_.stopOrder)
+    }
+  }
+
+  //get the vehicle's occupancy for the given segment 
+  def getVehicleAvailability(vehicleId: Long, trip: Trip, 
+    pickup: Stop, dropoff: Stop) =  {
+
+    val routeStops = Route.getStops(pickup.routeId)
+
+    val betweenStops = getInBetweenStops(routeStops, pickup, dropoff)
+    betweenStops.foreach(b => println(b.id, b.name))
+
+    val vehicle = Vehicle.get(vehicleId) match {
+      case Some(v) => v
+      case _ => throw(new Exception("Invalid Vehicle ID"))
+    }
+
+    val trips = getOccupiedTripsByVehicle(vehicle.id)
+
+
+    //build out the occupancy table
+    val occupancy = vehicle.maximumOccupancy
+    val occupancyTable = buildOccupancyTable(routeStops, trips, occupancy)
+    occupancyTable
+  }
                          
   //search for a vehicle that has occupancy for this trip
   //this is only called from DispatchActor
-  def assignVehicle(trip: Trip) = {
+  //and selects the closest driver
+  def assignVehicleForOnDemand(trip: Trip) = {
+    val routeStops = Route.getStops(trip.routeId)
     if (trip.isProcessing) {
       val vehicles = Vehicle.getForRouteRaw(trip.routeId)
       //need to get vehicles with availability here
+
+      val (pickup, dropoff) = getStops(trip.pickupStop, trip.dropoffStop) match {
+        case Some((p, d)) => (p,d)
+        case _ => throw(new Exception("no stops"))
+      }
+
+      val availabilityTable = vehicles.map(v => 
+        v.driverId -> getVehicleAvailability(v.id, trip, pickup, dropoff)
+      ).toMap
+
+      val tripStopIds = getInBetweenStops(routeStops, pickup, dropoff).map(_.id)
+      val availableVehicles = availabilityTable.filter { case(driver, table) => {
+        tripStopIds.filter(ts => table(ts) > 0).size > 0
+      }}.map { case(driverId, a)  => vehicles.filter(_.driverId == driverId) }.head 
+
+
+      println(availableVehicles)
+
 
       val vehicleLocs = vehicles.map(v => {
           val loc = GpsLocation.getCurrentForUser(v.driverId) match {
@@ -166,13 +266,11 @@ object Trip extends CompanionTable[Trip] {
           v.id -> loc 
       }).toMap
 
-      val p = Stop.get(trip.pickupStop) match {
-        case Some(p) => Geo.latLngFromWKB(p.geom)
-        case _ => Map[String, Float]()//should not happen EVER!
-      }
+      val p = Geo.latLngFromWKB(pickup.geom)
       val stopLoc = (p("latitude").toString.toFloat, p("longitude").toString.toFloat)
       //get the distance table 
-      val table = Osrm.getDistanceTable(stopLoc, vehicleLocs.values.toList)
+      val distanceTable = Osrm.getDistanceTable(stopLoc, vehicleLocs.values.toList)
+      
     }
 
     /*
@@ -186,5 +284,10 @@ object Trip extends CompanionTable[Trip] {
       })
     */
   }
+  
+  def assignVehicleForReservation(trip: Trip) = {
+
+  }
+
 
 }

@@ -35,6 +35,7 @@ object Osrm {
       s"loc=${lon},${lat}"
      }.mkString("&") 
      val url = s"${endpoint}?loc=${start._1},${start._2}&${locParams}"
+     println(url)
      val http = new HttpClient(url)
      val p = http.fetchAsMap()
      p("distance_table").asInstanceOf[List[List[BigInt]]]

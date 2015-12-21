@@ -91,15 +91,16 @@ case class Vehicle(override var id: Long=0,
 
 object Vehicle extends CompanionTable[Vehicle] {
 
+  def getForRouteRaw(routeId: Long) = fetch {
+    from(Vehicles)(v => 
+    where(v.routeId === routeId and v.active === true)
+    select(v))
+  } 
 
   def getForRoute(routeId: Long) = {
-    val vehicles = fetch {
-      from(Vehicles)(v => 
-      where(v.routeId === routeId and v.active === true)
-      select(v))
-    }
-    vehicles.par.map(v => v.asMap).toList
+    getForRouteRaw(routeId).par.map(v => v.asMap).toList
   }
+
 
   def getMinimalForRoute(routeId: Long) = {
     val vehicles = fetch {

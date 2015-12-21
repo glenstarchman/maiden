@@ -12,6 +12,8 @@ import com.maiden.common.MaidenCache._
 import com.maiden.common.exceptions._
 import com.maiden.common.Codes._
 import com.maiden.common.Enums._
+import com.maiden.common.{Geo, Osrm}
+
 
 case class Trip(override var id: Long=0, 
                 var userId: Long = 0,
@@ -69,6 +71,22 @@ object Trip extends CompanionTable[Trip] {
       }
     }
   }
+
+  def setProcessing(tripId: Long, processing: Boolean) = {
+    //need to validate the transition and do other stuff here
+    withTransaction {
+      Trip.get(tripId) match {
+        case Some(t) => {
+          t.isProcessing = processing 
+          Trips.update(t)
+          t
+        }
+        //don't throw an exception here or the actor will vomit
+        case _ => () 
+      }
+    }
+  }
+
 
   def getFullDetails(tripId: Long) = { 
     val trip = fetchOne {
@@ -128,15 +146,45 @@ object Trip extends CompanionTable[Trip] {
     }
   }
 
-  def getPending() = getByCriteria(rideState = Option( RideStateType.Initial.id))
+  def getPending() = getByCriteria(
+    rideState = Option( RideStateType.Initial.id),
+    isProcessing = Option(false)
+  )
                          
+  //search for a vehicle that has occupancy for this trip
+  //this is only called from DispatchActor
+  def assignVehicle(trip: Trip) = {
+    if (trip.isProcessing) {
+      val vehicles = Vehicle.getForRouteRaw(trip.routeId)
+      //need to get vehicles with availability here
 
-  //grab all trips that need to be assigned
-  def assignVehicle() = {
-    val trips = getByCriteria(
-      rideState = Option(RideStateType.Initial.id)
-    ) 
+      val vehicleLocs = vehicles.map(v => {
+          val loc = GpsLocation.getCurrentForUser(v.driverId) match {
+            case Some(gps) => (gps.longitude, gps.latitude)
+            case _ => (0f, 0f)
+          }
+          v.id -> loc 
+      }).toMap
 
+      val p = Stop.get(trip.pickupStop) match {
+        case Some(p) => Geo.latLngFromWKB(p.geom)
+        case _ => Map[String, Float]()//should not happen EVER!
+      }
+      val stopLoc = (p("latitude").toString.toFloat, p("longitude").toString.toFloat)
+      //get the distance table 
+      val table = Osrm.getDistanceTable(stopLoc, vehicleLocs.values.toList)
+    }
+
+    /*
+    val available = vehicles.map(v => {
+        //need to get the seats available for this leg of the trip
+        val pickupLoc = 
+        val seatsAvailable = getAvailableSeats(trip.pickupStop, trip.dropoffStop)
+        if (seatsAvailable > 0) {
+          val eta = Osrm.getDistanceTable( 
+        }
+      })
+    */
   }
 
 }

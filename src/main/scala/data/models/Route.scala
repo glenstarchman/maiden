@@ -74,5 +74,4 @@ object Route extends CompanionTable[Route] {
       select(r))
     }
   }
-
 }

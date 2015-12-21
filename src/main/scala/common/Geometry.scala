@@ -1,7 +1,8 @@
 package com.maiden.common
 
+import scala.collection.JavaConversions._
 import com.vividsolutions.jts.geom._
-import com.vividsolutions.jts.io.WKBReader;
+import com.vividsolutions.jts.io.{WKBReader, WKBWriter};
 import org.opentripplanner.common.geometry.SphericalDistanceLibrary
 
 
@@ -24,6 +25,17 @@ object Geo {
     val wk = new WKBReader(gm)
     val geom = wk.read(hex2Bytes(wkb)).getCoordinate
     Map("latitude" -> geom.y, "longitude" -> geom.x)
+  }
+
+  def latLngToWKB(coords: List[List[Float]]) = {
+    val points = coords.map(c => 
+        makePoint(c(0), c(1))
+          .getCoordinate)
+      .toArray
+    val route = gm.createLineString(points)
+    val w = new WKBWriter()
+    WKBWriter.bytesToHex(w.write(route))
+
   }
 
   def makePoint(lat: Float, lng: Float) = gm.createPoint(new Coordinate(lat,lng))

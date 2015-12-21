@@ -35,6 +35,7 @@ case class Trip(override var id: Long=0,
                 var dropoffTime: Timestamp = null,
                 var cancellationTime: Timestamp = null,
                 var isProcessing: Boolean = false,
+                var geom: String = "",
                 var createdAt: Timestamp=new Timestamp(System.currentTimeMillis), 
                 var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis)) 
   extends BaseMaidenTableWithTimestamps {
@@ -298,18 +299,30 @@ object Trip extends CompanionTable[Trip] {
             (geo("longitude").toFloat, geo("latitude").toFloat)
         }).toList
 
-        println(betweenLocs)
-                                              
         val o = Osrm.getRouteAndEta((vLoc.longitude, vLoc.latitude), 
                                     betweenLocs) 
         //set our ETA on the trip
         trip.eta = new Timestamp(
           new DateTime().plusSeconds(o("eta").toString.toInt).getMillis
         )
+
+        //grab this trips route geometry
+        val tripPoints = getInBetweenStops(routeStops, pickup, dropoff).map(p => {
+          val geo = Geo.latLngFromWKB(p.geom)
+            (geo("longitude").toFloat, geo("latitude").toFloat)
+        }).toList
+
+        val tripRoute = Osrm.getRoute(List((vLoc.longitude, vLoc.latitude)) ++ 
+                                      betweenLocs) 
+
+        val tripGeom = o("geometry").asInstanceOf[List[List[Float]]].map(c =>
+            List(c(0).toString.toFloat, c(1).toString.toFloat)
+        )
+        trip.geom = Geo.latLngToWKB(tripGeom)
       }
 
       withTransaction {
-        //trip.eta = o("eta").toString.toInt
+        trip.isProcessing = false
         Trips.upsert(trip)
       }
     }

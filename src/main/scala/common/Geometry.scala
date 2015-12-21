@@ -27,7 +27,15 @@ object Geo {
     Map("latitude" -> geom.y, "longitude" -> geom.x)
   }
 
-  def latLngToWKB(coords: List[List[Float]]) = {
+  def latLngListFromWKB(wkb: String) = {
+    val wk = new WKBReader(gm)
+    val geom = wk.read(hex2Bytes(wkb)).getCoordinates
+    geom.map(g => 
+      Map("latitude" -> g.y, "longitude" -> g.x)
+    ).toList
+  }
+
+  def latLngListToWKB(coords: List[List[Float]]) = {
     val points = coords.map(c => 
         makePoint(c(0), c(1))
           .getCoordinate)
@@ -58,9 +66,4 @@ object Geo {
       List(geom.x, geom.y)
     ).toList
   }
-
-
 }
-
-
-

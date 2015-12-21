@@ -40,7 +40,6 @@ case class Trip(override var id: Long=0,
                 var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis)) 
   extends BaseMaidenTableWithTimestamps {
 
-
 }
 
 object Trip extends CompanionTable[Trip] {
@@ -182,7 +181,6 @@ object Trip extends CompanionTable[Trip] {
     }
   }
 
-
   def buildOccupancyTable(stops: List[Stop], trips: List[Trip], occupancy: Int) = {
     var table = MMap[Long, Int]()
     stops.foreach(s => table(s.id) = occupancy)
@@ -273,7 +271,7 @@ object Trip extends CompanionTable[Trip] {
           //need to sort by distance
           val vehicleLocs = availableVehicles.map(v => {
               val loc = GpsLocation.getCurrentForUser(v.driverId) match {
-                case Some(gps) => (gps.longitude, gps.latitude)
+                case Some(gps) => (gps.latitude, gps.longitude)
                 case _ => (0f, 0f)
               }
               v.id -> loc 
@@ -291,15 +289,15 @@ object Trip extends CompanionTable[Trip] {
       if (trip.rideState == RideStateType.VehicleAccepted.id) {
         val vLoc = GpsLocation.getCurrentForUser(trip.driverId).get
         val closest = Stop.getClosestStop(vLoc.latitude, vLoc.longitude)
-        val closestStopLoc = (closest("latitude").toString.toFloat, closest("longitude").toString.toFloat)
+        val closestStopLoc = (closest("longitude").toString.toFloat, closest("latitude").toString.toFloat)
 
         val c = Stop.get(closest("id").toString.toLong).get
         val betweenLocs = getInBetweenStops(routeStops, c, pickup).map(b => {
           val geo = Geo.latLngFromWKB(b.geom)
-            (geo("longitude").toFloat, geo("latitude").toFloat)
+            (geo("latitude").toFloat, geo("longitude").toFloat)
         }).toList
 
-        val o = Osrm.getRouteAndEta((vLoc.longitude, vLoc.latitude), 
+        val o = Osrm.getRouteAndEta((vLoc.latitude, vLoc.longitude), 
                                     betweenLocs) 
         //set our ETA on the trip
         trip.eta = new Timestamp(
@@ -309,16 +307,16 @@ object Trip extends CompanionTable[Trip] {
         //grab this trips route geometry
         val tripPoints = getInBetweenStops(routeStops, pickup, dropoff).map(p => {
           val geo = Geo.latLngFromWKB(p.geom)
-            (geo("longitude").toFloat, geo("latitude").toFloat)
+            (geo("latitude").toFloat, geo("longitude").toFloat)
         }).toList
 
-        val tripRoute = Osrm.getRoute(List((vLoc.longitude, vLoc.latitude)) ++ 
-                                      betweenLocs) 
+        val tripRoute = Osrm.getRoute(List((vLoc.latitude, vLoc.longitude)) ++ 
+                                        betweenLocs) 
 
         val tripGeom = o("geometry").asInstanceOf[List[List[Float]]].map(c =>
             List(c(0).toString.toFloat, c(1).toString.toFloat)
         )
-        trip.geom = Geo.latLngToWKB(tripGeom)
+        trip.geom = Geo.latLngListToWKB(tripGeom)
       }
 
       withTransaction {

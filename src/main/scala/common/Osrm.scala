@@ -15,11 +15,12 @@ object Osrm {
   def getRoute(locs: List[(Float, Float)]) = {
     val endpoint = buildEndpoint("viaroute")
     val locParams = locs.map { case (lat, lon) => 
-      s"loc=${lon},${lat}"
-     }.mkString("&") + s"&loc=${locs(0)._2},${locs(0)._1}"
+      s"loc=${lat},${lon}"
+     }.mkString("&") + s"&loc=${locs(0)._1},${locs(0)._2}"
 
      val url = s"${endpoint}?${locParams}&compression=false"
      val http = new HttpClient(url)
+     println(url)
      val p = http.fetchAsMap()
      val geom = p("route_geometry").asInstanceOf[List[List[(Float, Float)]]]
      geom ++ List(geom(0))
@@ -32,7 +33,7 @@ object Osrm {
   def getDistanceTable(start: (Float, Float), points: List[(Float,Float)]) = {
     val endpoint = buildEndpoint("table")
     val locParams = points.map { case (lat, lon) => 
-      s"loc=${lon},${lat}"
+      s"loc=${lat},${lon}"
      }.mkString("&") 
      val url = s"${endpoint}?loc=${start._1},${start._2}&${locParams}"
      println(url)
@@ -44,9 +45,9 @@ object Osrm {
   def getRouteAndEta(start: (Float, Float), points: List[(Float, Float)]) = {
     val endpoint = buildEndpoint("viaroute")
     val locParams = points.map { case (lat, lon) => 
-      s"loc=${lon},${lat}"
+      s"loc=${lat},${lon}"
      }.mkString("&") 
-     val url = s"${endpoint}?loc=${start._2},${start._1}&${locParams}&compression=false"
+     val url = s"${endpoint}?loc=${start._1},${start._2}&${locParams}&compression=false"
      val http = new HttpClient(url)
      val p = http.fetchAsMap()
      val geometry = p("route_geometry")

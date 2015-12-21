@@ -63,8 +63,8 @@ object Stop extends CompanionTable[Stop] {
          details, thumbnail, 
          active, marker_type, marker_color, show_marker,
          created_at, updated_at,
-         ST_X(geom) as latitude,
-         ST_Y(geom) as longitude
+         ST_Y(geom) as latitude,
+         ST_X(geom) as longitude
          from stop
          where route_id = ${id}
          order by stop_order asc
@@ -74,8 +74,8 @@ object Stop extends CompanionTable[Stop] {
          details, thumbnail,
          active, marker_type, marker_color, show_marker,
          created_at, updated_at,
-         ST_X(geom) as latitude,
-         ST_Y(geom) as longitude
+         ST_Y(geom) as latitude,
+         ST_X(geom) as longitude
          from stop
          order by stop_order asc
          """

@@ -41,6 +41,23 @@ object Osrm {
      p("distance_table").asInstanceOf[List[List[BigInt]]]
   }
 
+  def getRouteAndEta(start: (Float, Float), points: List[(Float, Float)]) = {
+    val endpoint = buildEndpoint("viaroute")
+    val locParams = points.map { case (lat, lon) => 
+      s"loc=${lon},${lat}"
+     }.mkString("&") 
+     val url = s"${endpoint}?loc=${start._2},${start._1}&${locParams}&compression=false"
+     val http = new HttpClient(url)
+     val p = http.fetchAsMap()
+     val geometry = p("route_geometry")
+     val summary = p("route_summary").asInstanceOf[Map[String, Any]]
+     Map(
+       "geometry" -> geometry,
+       "distance" -> summary("total_distance"),
+       "eta" -> summary("total_time")
+     )
+  }
+
 }
 
 

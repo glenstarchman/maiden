@@ -56,14 +56,15 @@ object Enums {
     val NoDriverFound = Value(-7, "No Drivers Found")
     val OutOfServiceArea = Value(-8, "Out of Service Area")
     val ReservationTimeout = Value(-9, "Reservation Timed Out")
+    val NoAvailableVehicles = Value(-10, "No Available Vehicles")
 
     //super exceptional cases
     //these are for cases where the ride was terminated
     //either because the passenger was unruly or the driver had 
     //to cancel mid-ride
-    val RideTerminatedNoCharge = Value(-10, "Ride Terminated Without Charge")
-    val RideTerminatedWithPenalty = Value(-11, "Ride Terminated With Penalty")
-   val OutsideOperatingHours = Value(-12, "Reservation Attempted Outside of Operating Hours")
+    val RideTerminatedNoCharge = Value(-11, "Ride Terminated Without Charge")
+    val RideTerminatedWithPenalty = Value(-12, "Ride Terminated With Penalty")
+   val OutsideOperatingHours = Value(-13, "Reservation Attempted Outside of Operating Hours")
 
   }
 

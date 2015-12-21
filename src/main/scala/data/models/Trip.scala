@@ -30,6 +30,7 @@ case class Trip(override var id: Long=0,
                 var pickupStop: Long = 0,
                 var dropoffStop: Long = 0,
                 var reservationTime: Timestamp = new Timestamp(System.currentTimeMillis),
+                var eta: Timestamp = null,
                 var pickupTime: Timestamp = null,
                 var dropoffTime: Timestamp = null,
                 var cancellationTime: Timestamp = null,
@@ -235,6 +236,7 @@ object Trip extends CompanionTable[Trip] {
   //this is only called from DispatchActor
   //and selects the closest driver
   def assignVehicleForOnDemand(trip: Trip) = {
+
     val routeStops = Route.getStops(trip.routeId)
     if (trip.isProcessing) {
       val vehicles = Vehicle.getForRouteRaw(trip.routeId)
@@ -250,39 +252,67 @@ object Trip extends CompanionTable[Trip] {
       ).toMap
 
       val tripStopIds = getInBetweenStops(routeStops, pickup, dropoff).map(_.id)
+
       val availableVehicles = availabilityTable.filter { case(driver, table) => {
         tripStopIds.filter(ts => table(ts) > 0).size > 0
       }}.map { case(driverId, a)  => vehicles.filter(_.driverId == driverId) }.head 
 
-
-      println(availableVehicles)
-
-
-      val vehicleLocs = vehicles.map(v => {
-          val loc = GpsLocation.getCurrentForUser(v.driverId) match {
-            case Some(gps) => (gps.longitude, gps.latitude)
-            case _ => (0f, 0f)
-          }
-          v.id -> loc 
-      }).toMap
-
-      val p = Geo.latLngFromWKB(pickup.geom)
-      val stopLoc = (p("latitude").toString.toFloat, p("longitude").toString.toFloat)
-      //get the distance table 
-      val distanceTable = Osrm.getDistanceTable(stopLoc, vehicleLocs.values.toList)
-      
-    }
-
-    /*
-    val available = vehicles.map(v => {
-        //need to get the seats available for this leg of the trip
-        val pickupLoc = 
-        val seatsAvailable = getAvailableSeats(trip.pickupStop, trip.dropoffStop)
-        if (seatsAvailable > 0) {
-          val eta = Osrm.getDistanceTable( 
+      //short-circuit if only one vehicle 
+      val bookedTrip = availableVehicles.size match {
+        case 0 => trip.rideState = RideStateType.NoAvailableVehicles.id 
+        case 1 => {
+          println("have a single driver")
+          //assign this vehicle/driver to the trip
+          val v = availableVehicles.head
+          trip.driverId = v.driverId
+          trip.vehicleId = v.id
+          trip.rideState = RideStateType.VehicleAccepted.id
         }
-      })
-    */
+        case _ => {
+          //need to sort by distance
+          val vehicleLocs = availableVehicles.map(v => {
+              val loc = GpsLocation.getCurrentForUser(v.driverId) match {
+                case Some(gps) => (gps.longitude, gps.latitude)
+                case _ => (0f, 0f)
+              }
+              v.id -> loc 
+          }).toMap
+
+          val p = Geo.latLngFromWKB(pickup.geom)
+          val stopLoc = (p("latitude").toString.toFloat, p("longitude").toString.toFloat)
+          //get the distance table 
+          val distanceTable = Osrm.getDistanceTable(stopLoc, vehicleLocs.values.toList)
+          println(distanceTable)
+        }
+      }
+
+      //figure out the ETA if successfully booked
+      if (trip.rideState == RideStateType.VehicleAccepted.id) {
+        val vLoc = GpsLocation.getCurrentForUser(trip.driverId).get
+        val closest = Stop.getClosestStop(vLoc.latitude, vLoc.longitude)
+        val closestStopLoc = (closest("latitude").toString.toFloat, closest("longitude").toString.toFloat)
+
+        val c = Stop.get(closest("id").toString.toLong).get
+        val betweenLocs = getInBetweenStops(routeStops, c, pickup).map(b => {
+          val geo = Geo.latLngFromWKB(b.geom)
+            (geo("longitude").toFloat, geo("latitude").toFloat)
+        }).toList
+
+        println(betweenLocs)
+                                              
+        val o = Osrm.getRouteAndEta((vLoc.longitude, vLoc.latitude), 
+                                    betweenLocs) 
+        //set our ETA on the trip
+        trip.eta = new Timestamp(
+          new DateTime().plusSeconds(o("eta").toString.toInt).getMillis
+        )
+      }
+
+      withTransaction {
+        //trip.eta = o("eta").toString.toInt
+        Trips.upsert(trip)
+      }
+    }
   }
   
   def assignVehicleForReservation(trip: Trip) = {

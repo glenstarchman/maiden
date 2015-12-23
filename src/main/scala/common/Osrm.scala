@@ -1,5 +1,6 @@
 package com.maiden.common
 
+import org.joda.time._
 import com.maiden.common.MaidenConfigFactory.{config, env}
 
 object Osrm {
@@ -20,13 +21,14 @@ object Osrm {
 
      val url = s"${endpoint}?${locParams}&compression=false"
      val http = new HttpClient(url)
-     println(url)
      val p = http.fetchAsMap()
      val geom = p("route_geometry").asInstanceOf[List[List[(Float, Float)]]]
      geom ++ List(geom(0))
   }
 
-  private[this] def fixupTime(value: String) = {
+  //this is where we can algorithmically add/subtract 
+  //from the ETA based on time of day, etc...
+  private[this] def fixupTime(d: DateTime) = {
 
   }
 
@@ -36,7 +38,6 @@ object Osrm {
       s"loc=${lat},${lon}"
      }.mkString("&") 
      val url = s"${endpoint}?loc=${start._1},${start._2}&${locParams}"
-     println(url)
      val http = new HttpClient(url)
      val p = http.fetchAsMap()
      p("distance_table").asInstanceOf[List[List[BigInt]]]

@@ -35,20 +35,54 @@ case class Trip(override var id: Long=0,
                 var dropoffTime: Timestamp = null,
                 var cancellationTime: Timestamp = null,
                 var isProcessing: Boolean = false,
-                var geom: String = "",
+                var geom: String = null,
                 var createdAt: Timestamp=new Timestamp(System.currentTimeMillis), 
                 var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis)) 
   extends BaseMaidenTableWithTimestamps {
 
+    def miniUpdateMap() = Map(
+      "id" -> id,
+      "rideState" -> rideState,
+      "paymentState" -> paymentState,
+      "isTransfer" -> isTransfer,
+      "pickupStop" -> pickupStop,
+      "dropoffStop" -> dropoffStop,
+      "isTransfer" -> isTransfer,
+      "vehicle" -> {
+        Vehicle.get(vehicleId) match {
+          case Some(v) => v.asMap
+          case _ => Map.empty
+        }
+      },
+      "eta" -> getDriverEta() 
+    ) 
+
+    def getDriverEta() = {
+      val routeStops = Route.getStops(routeId)
+      val vLoc = GpsLocation.getCurrentForUser(driverId).get
+      val closest = Stop.getClosestStop(vLoc.latitude, vLoc.longitude)
+      val c = Stop.get(closest("id").toString.toLong).get
+      val pickup = Stop.get(pickupStop).get 
+      val betweenLocs = Trip.getInBetweenStops(routeStops, c, pickup).map(b => {
+      val geo = Geo.latLngFromWKB(b.geom)
+         (geo("latitude").toFloat, geo("longitude").toFloat)
+      }).toList
+      val o = Osrm.getRouteAndEta((vLoc.latitude, vLoc.longitude), 
+                                    betweenLocs) 
+
+      new DateTime().plusSeconds(o("eta").toString.toInt).toString
+    }
 }
 
 object Trip extends CompanionTable[Trip] {
 
 
-  def create(userId: Long, reservationType: Int, 
+  def create(userId: Long, routeId: Long, 
+            reservationType: Int, 
              pickupStop: Long, dropoffStop: Long) = {
     val trip = Trip(
       userId = userId,
+      routeId = routeId,
       reservationType = reservationType,
       pickupStop = pickupStop,
       dropoffStop = dropoffStop,
@@ -57,6 +91,7 @@ object Trip extends CompanionTable[Trip] {
 
     withTransaction {
       Trips.upsert(trip)
+      Option(trip)
     }
   }
 
@@ -77,15 +112,9 @@ object Trip extends CompanionTable[Trip] {
   def setProcessing(tripId: Long, processing: Boolean) = {
     //need to validate the transition and do other stuff here
     withTransaction {
-      Trip.get(tripId) match {
-        case Some(t) => {
-          t.isProcessing = processing 
-          Trips.update(t)
-          t
-        }
-        //don't throw an exception here or the actor will vomit
-        case _ => () 
-      }
+      update(Trips)(t => 
+      where(t.id === tripId)
+      set(t.isProcessing := processing))
     }
   }
 
@@ -144,14 +173,14 @@ object Trip extends CompanionTable[Trip] {
         (t.rideState === rideState.?) and
         (t.paymentState === paymentState.?) and
         (t.isProcessing === isProcessing.?) and
-        (t.reservationTime === reservationTime) //BUG
+        (t.reservationTime === reservationTime.?) //BUG
       )
       select(t))
     }
   }
 
   def getPending() = getByCriteria(
-    rideState = Option( RideStateType.Initial.id),
+    rideState = Option(RideStateType.Initial.id),
     isProcessing = Option(false)
   )
 
@@ -201,10 +230,11 @@ object Trip extends CompanionTable[Trip] {
           f.stopOrder <= dropoff.stopOrder
        )
     } else {
-      routeStops.filter(f => f.stopOrder >= pickup.stopOrder)
-        .sortBy(_.stopOrder) ++ 
-      routeStops.filter(f => f.stopOrder <= dropoff.stopOrder)
+      val after = routeStops.filter(f => f.stopOrder >= pickup.stopOrder)
+        .sortBy(_.stopOrder)  
+      val before = routeStops.filter(f => f.stopOrder <= dropoff.stopOrder)
         .sortBy(_.stopOrder)
+      after ++ before
     }
   }
 
@@ -215,7 +245,7 @@ object Trip extends CompanionTable[Trip] {
     val routeStops = Route.getStops(pickup.routeId)
 
     val betweenStops = getInBetweenStops(routeStops, pickup, dropoff)
-    betweenStops.foreach(b => println(b.id, b.name))
+    //betweenStops.foreach(b => println(b.id, b.name))
 
     val vehicle = Vehicle.get(vehicleId) match {
       case Some(v) => v
@@ -235,7 +265,8 @@ object Trip extends CompanionTable[Trip] {
   //this is only called from DispatchActor
   //and selects the closest driver
   def assignVehicleForOnDemand(trip: Trip) = {
-
+    Trip.setProcessing(trip.id, true)
+    trip.isProcessing = true
     val routeStops = Route.getStops(trip.routeId)
     if (trip.isProcessing) {
       val vehicles = Vehicle.getForRouteRaw(trip.routeId)
@@ -260,7 +291,6 @@ object Trip extends CompanionTable[Trip] {
       val bookedTrip = availableVehicles.size match {
         case 0 => trip.rideState = RideStateType.NoAvailableVehicles.id 
         case 1 => {
-          println("have a single driver")
           //assign this vehicle/driver to the trip
           val v = availableVehicles.head
           trip.driverId = v.driverId
@@ -281,7 +311,6 @@ object Trip extends CompanionTable[Trip] {
           val stopLoc = (p("latitude").toString.toFloat, p("longitude").toString.toFloat)
           //get the distance table 
           val distanceTable = Osrm.getDistanceTable(stopLoc, vehicleLocs.values.toList)
-          println(distanceTable)
         }
       }
 
@@ -326,6 +355,7 @@ object Trip extends CompanionTable[Trip] {
     }
   }
   
+  /* TODO: we may just call a Crown API here for now... */
   def assignVehicleForReservation(trip: Trip) = {
 
   }

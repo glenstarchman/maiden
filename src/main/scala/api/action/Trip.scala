@@ -52,6 +52,62 @@ class TripInfo extends AuthorizedTripApi {
   }
 }
 
+@First
+@POST("api/trip/book")
+@GET("api/trip/:id")
+@Swagger(
+  Swagger.OperationId("book_trip"),
+  Swagger.Summary("book a trip"),
+  Swagger.IntQuery("routeId", "The route id"),
+  Swagger.IntQuery("reservationType", "Reservation type"),
+  Swagger.IntQuery("pickupStop", "The id of the pickup"),
+  Swagger.IntQuery("dropoffStop", "The id of the dropoff"),
+  Swagger.OptIntQuery("pickupTime", "Not used yet")
+)
+class BookTrip extends AuthorizedTripApi {
+  def execute() {
+    //only the booking user, the assigned driver, or an admin can see
+    //for now anyone will do... for testing
+    futureExecute(() => { 
+      val userId = user.get.id
+      Trip.create(userId, 
+                  param[Long]("routeId"),
+                  param[Int]("reservationType"),
+                  param[Long]("pickupStop"),
+                  param[Long]("dropoffStop")
+       ) match {
+         case Some(trip) => (R.OK, trip.asMap)
+         case _ => throw(new CreateOrUpdateFailedException())
+       }
+    })
+  }
+}
+
+
+@POST("api/trip/:id/updates")
+@GET("api/trip/:id/updates")
+@Swagger(
+  Swagger.OperationId("trip_updates"),
+  Swagger.Summary("get a digest of a trip's updates"),
+  Swagger.IntPath("id", "The trip id")
+)
+class TripUpdates extends AuthorizedTripApi {
+  def execute() {
+    futureExecute(() => {
+      val trip = Trip.get(param[Long]("id")) match {
+        case Some(t) => t
+        case _ => throw(new NoTripException())
+      }
+      if (user.get.id == trip.userId || user.get.id == trip.driverId) { 
+        (R.OK, trip.miniUpdateMap)
+      } else {
+        throw(new UnauthorizedException())
+      }
+    })
+  }
+}
+
+
 @POST("api/trip/:id/update/state/:state")
 @GET("api/trip/:id/update/state/:state")
 @Swagger(

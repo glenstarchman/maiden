@@ -38,12 +38,13 @@ object DispatchActor {
           case CheckRideState => {
             if (!processingStates("rideState")) {
               toggleState("rideState") 
-              Trip.getPending.foreach(trip => {
-                //this is where we perform our magic
-                Trip.setProcessing(trip.id, true)
+              Trip.getPending.par.foreach(trip => {
+                //Trip.setProcessing(trip.id, true)
                 Trip.updateState(trip.id, RideStateType.FindingVehicle.id)
                 if (trip.reservationType == ReservationType.OnDemand.id) {
+                  println("processing " + trip.id)
                   Trip.assignVehicleForOnDemand(trip)
+                  println("completed")
                 } else {
                   Trip.assignVehicleForReservation(trip)
                 }
@@ -62,8 +63,8 @@ object DispatchActor {
 
 
   def start() = {
-    system.scheduler.schedule(0 milliseconds,
-                    200 milliseconds,
+    system.scheduler.schedule(500 milliseconds,
+                    1000 milliseconds,
                     dispatchActor,
                     CheckRideState)
 

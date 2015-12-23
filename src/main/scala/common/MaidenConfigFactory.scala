@@ -27,6 +27,12 @@ object MaidenConfigFactory {
     "raygun.api_key" -> conf.getString("raygun.api_key")
   )
 
+  lazy val pubnubConfig = Map(
+    "pubnub.publish_key" -> conf.getString("pubnub.publish_key"),
+    "pubnub.subscribe_key" -> conf.getString("pubnub.subscribe_key"),
+    "pubnub.secret_key" -> conf.getString("pubnub.secret_key")
+  )
+
   lazy val dbConfig = Map( 
     "db.host" -> conf.getString("db.host"),
     "db.user" -> conf.getString("db.user"),
@@ -83,7 +89,7 @@ object MaidenConfigFactory {
   lazy val config = generalConfig ++ basicAuth ++ osrmConfig ++ 
                     awsConfig ++ dbConfig ++ memcachedConfig ++ 
                     cdnConfig ++ adminConfig ++ mailConfig ++ 
-                    hostConfig ++ facebookConfig
+                    hostConfig ++ facebookConfig ++ pubnubConfig
 
 
 }

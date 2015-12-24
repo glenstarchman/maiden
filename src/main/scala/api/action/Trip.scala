@@ -54,7 +54,7 @@ class TripInfo extends AuthorizedTripApi {
 
 @First
 @POST("api/trip/book")
-@GET("api/trip/:id")
+@GET("api/trip/book")
 @Swagger(
   Swagger.OperationId("book_trip"),
   Swagger.Summary("book a trip"),

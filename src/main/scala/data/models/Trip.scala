@@ -341,13 +341,15 @@ object Trip extends CompanionTable[Trip] {
         )
 
         //grab this trips route geometry
-        val tripPoints = getInBetweenStops(routeStops, pickup, dropoff).map(p => {
+        /*val tripPoints = getInBetweenStops(routeStops, pickup, dropoff).map(p => {
           val geo = Geo.latLngFromWKB(p.geom)
             (geo("latitude").toFloat, geo("longitude").toFloat)
         }).toList
+        */
 
-        val tripRoute = Osrm.getRoute(List((vLoc.latitude, vLoc.longitude)) ++ 
+        /*val tripRoute = Osrm.getRoute(List((vLoc.latitude, vLoc.longitude)) ++ 
                                         betweenLocs) 
+        */
 
         val tripGeom = o("geometry").asInstanceOf[List[List[Float]]].map(c =>
             List(c(0).toString.toFloat, c(1).toString.toFloat)

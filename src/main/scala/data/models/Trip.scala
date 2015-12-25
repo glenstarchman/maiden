@@ -146,7 +146,14 @@ object Trip extends CompanionTable[Trip] {
         "route" -> t._5.map(_.asMap),
         "fare" -> t._6.map(_.asMap),
         "pickup" -> t._7.map(_.asMap),
-        "dropoff" -> t._8.map(_.asMap)
+        "dropoff" -> t._8.map(_.asMap),
+        "tripGeom" -> {
+          if (t._1.geom != null && t._1.geom != "") {
+            Geo.latLngListFromWKB(t._1.geom) 
+          } else {
+            List.empty
+          }
+        }
       )
       case _ => Map[String, Any]()
     }

@@ -16,6 +16,8 @@ object RouteListener {
   val PROXY_NAME = "RouteListener"
   case class ListenRoute(id: Long)
   case class Msg(body: String)
+  case class RideStateChange(tripId: Long, rideState: Int)
+
   val registry = Registry.start(Config.actorSystem, PROXY_NAME)
 }
 

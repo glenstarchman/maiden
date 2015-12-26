@@ -123,6 +123,7 @@ lazy val api = (project in (file(".")))
       "com.vividsolutions" % "jts" % "1.13",
       "org.opentripplanner" % "otp" % "0.13.0",
       "com.stripe" % "stripe-java" % "1.40.0",
+      "com.pubnub" % "pubnub" % "3.7.5",
       //"com.cloudinary" % "cloudinary-core" % "1.2.2",
       //"com.cloudinary" % "cloudinary-http44" % "1.2.2",
       //"com.github.detro.ghostdriver" % "phantomjsdriver" % "1.1.0",

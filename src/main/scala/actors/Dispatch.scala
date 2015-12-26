@@ -6,6 +6,7 @@ import scala.concurrent.duration._
 import scala.collection.mutable.{Map => MMap}
 import com.maiden.data.models._
 import com.maiden.common.Enums._
+import com.maiden.common.PubnubHelper
 
 case object CheckRideState
 case object SendNotifications
@@ -42,9 +43,7 @@ object DispatchActor {
                 //Trip.setProcessing(trip.id, true)
                 Trip.updateState(trip.id, RideStateType.FindingVehicle.id)
                 if (trip.reservationType == ReservationType.OnDemand.id) {
-                  println("processing " + trip.id)
                   Trip.assignVehicleForOnDemand(trip)
-                  println("completed")
                 } else {
                   Trip.assignVehicleForReservation(trip)
                 }

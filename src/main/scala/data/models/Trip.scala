@@ -13,8 +13,8 @@ import com.maiden.common.MaidenCache._
 import com.maiden.common.exceptions._
 import com.maiden.common.Codes._
 import com.maiden.common.Enums._
-import com.maiden.common.{Geo, Osrm}
-
+import com.maiden.common.{Geo, Osrm, PubnubHelper}
+import com.maiden.common.helpers.Hasher
 
 case class Trip(override var id: Long=0, 
                 var userId: Long = 0,
@@ -40,6 +40,22 @@ case class Trip(override var id: Long=0,
                 var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis)) 
   extends BaseMaidenTableWithTimestamps {
 
+    def getHash() = {
+      val h = s"trip-${id}"
+      h
+      //Hasher.md5(h)
+    }
+
+    override def extraMap() = Map(
+      "hash" -> getHash(),
+      "vehicle" -> {
+        Vehicle.get(vehicleId) match {
+          case Some(v) => v.asMap
+          case _ => Map.empty
+        }
+      }
+    )
+
     def miniUpdateMap() = Map(
       "id" -> id,
       "rideState" -> rideState,
@@ -54,7 +70,8 @@ case class Trip(override var id: Long=0,
           case _ => Map.empty
         }
       },
-      "eta" -> getDriverEta() 
+      "eta" -> getDriverEta(),
+      "hash" -> getHash()
     ) 
 
     def getDriverEta() = {
@@ -76,6 +93,24 @@ case class Trip(override var id: Long=0,
 
 object Trip extends CompanionTable[Trip] {
 
+
+  def getForDriver(driverId: Long) = {
+    val validStates = List(
+      RideStateType.VehicleAccepted.id,
+      RideStateType.VehicleOnWay.id,
+      RideStateType.RideUnderway.id,
+      RideStateType.RideRebooked.id
+    )
+
+    fetch {
+      from(Trips)(t =>
+      where (
+        (t.driverId === driverId) and 
+        (t.rideState in validStates)
+      )
+      select(t))
+    }
+  }
 
   def create(userId: Long, routeId: Long, 
             reservationType: Int, 
@@ -102,6 +137,8 @@ object Trip extends CompanionTable[Trip] {
         case Some(t) => {
           t.rideState = state
           Trips.update(t)
+          println(t.asMap)
+          PubnubHelper.send(t.getHash(), t.asMap)
           t
         }
         case _ => throw(new NoTripException()) 
@@ -265,6 +302,7 @@ object Trip extends CompanionTable[Trip] {
     //build out the occupancy table
     val occupancy = vehicle.maximumOccupancy
     val occupancyTable = buildOccupancyTable(routeStops, trips, occupancy)
+    println(occupancyTable);
     occupancyTable
   }
                          
@@ -290,10 +328,18 @@ object Trip extends CompanionTable[Trip] {
 
       val tripStopIds = getInBetweenStops(routeStops, pickup, dropoff).map(_.id)
 
-      val availableVehicles = availabilityTable.filter { case(driver, table) => {
-        tripStopIds.filter(ts => table(ts) > 0).size > 0
-      }}.map { case(driverId, a)  => vehicles.filter(_.driverId == driverId) }.head 
+      val availableVehicles = availabilityTable.filter { 
+        case(driver, table) => {
+          tripStopIds.filter(ts => table(ts) > 0).size > 0
+        }
+      }.map { 
+      case(driverId, a)  => 
+        vehicles.filter(_.driverId == driverId) } match {
+          case x:List[Vehicle] if x.size > 0 => x.head 
+          case _ => List[Vehicle]() 
+        }
 
+       println(availableVehicles)
       //short-circuit if only one vehicle 
       val bookedTrip = availableVehicles.size match {
         case 0 => trip.rideState = RideStateType.NoAvailableVehicles.id 
@@ -360,6 +406,7 @@ object Trip extends CompanionTable[Trip] {
       withTransaction {
         trip.isProcessing = false
         Trips.upsert(trip)
+        PubnubHelper.send(trip.getHash(), trip.asMap)
       }
     }
   }

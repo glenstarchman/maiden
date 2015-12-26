@@ -27,8 +27,12 @@ case class Vehicle(override var id: Long=0,
                 var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis)) 
   extends BaseMaidenTableWithTimestamps {
 
+    def getHash() = {
+      s"vehicle-${id}"
+    }
 
   override def extraMap() = Map(
+    "hash" -> getHash(),
     "thumbnail" -> {
       thumbnail match {
         case x: String => x
@@ -68,6 +72,7 @@ case class Vehicle(override var id: Long=0,
   )
 
   def miniMap() = Map(
+    "hash" -> getHash(),
     "id" -> id,
     "currentLocation" -> {
       GpsLocation.getCurrentForUser(driverId) match {
@@ -90,6 +95,12 @@ case class Vehicle(override var id: Long=0,
 }
 
 object Vehicle extends CompanionTable[Vehicle] {
+
+  def getForUser(userId: Long) = fetchOne {
+    from(Vehicles)(v => 
+    where(v.driverId === userId)
+    select(v))
+  }
 
   def getForRouteRaw(routeId: Long) = fetch {
     from(Vehicles)(v => 

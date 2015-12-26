@@ -12,6 +12,7 @@ import MaidenSchema._
 import com.maiden.common.MaidenCache._
 import com.maiden.common.exceptions._
 import com.maiden.common.Codes._
+import com.maiden.common.PubnubHelper
 
 case class GpsLocation(override var id: Long=0, 
                 var userId: Long = 0,
@@ -43,6 +44,27 @@ object GpsLocation extends CompanionTable[GpsLocation] {
   def getCurrentForUser(userId: Long): Option[GpsLocation] = getForUser(userId, 1) match {
     case x: List[_] if x.size > 0 => Option(x(0))
     case _ => None 
+  }
+
+  def create(userId: Long, routeId: Long, latitude: Float, longitude: Float) = {
+    val gps = GpsLocation(userId = userId, 
+                          routeId = routeId,
+                          latitude = latitude,
+                          longitude = longitude)
+
+    withTransaction {
+      GpsLocations.upsert(gps)
+    }
+
+   
+    Vehicle.getForUser(userId) match {
+      case Some(v) => {
+        PubnubHelper.send(v.getHash(), gps.asMap)
+      }
+      case _ => ()
+    }
+
+
   }
 
 }

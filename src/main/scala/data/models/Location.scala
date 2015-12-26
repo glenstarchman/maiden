@@ -60,6 +60,7 @@ object GpsLocation extends CompanionTable[GpsLocation] {
     Vehicle.getForUser(userId) match {
       case Some(v) => {
         PubnubHelper.send(v.getHash(), gps.asMap)
+        PubnubHelper.send("route-" + v.routeId.toString, gps.asMap)
       }
       case _ => ()
     }

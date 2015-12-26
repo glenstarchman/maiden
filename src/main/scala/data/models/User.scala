@@ -71,6 +71,12 @@ case class User(override var id: Long=0,
                 var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis)) 
   extends FriendlyIdable with BaseMaidenTableWithTimestamps {
 
+  def activeTrips() = fetch {
+    from(Trips)(t => 
+    where(t.userId === id)
+    select(t))
+  }
+
   override def extraMap() = Map(
     "friendlyId" -> friendlyId
   )
@@ -90,7 +96,9 @@ case class User(override var id: Long=0,
         case Some(y) => y.asMap
         case _ => Map.empty
       }
-    }) ++  extraMap
+    },
+    "activeTrips" -> activeTrips
+  ) ++  extraMap
 
   def asMiniMap() = Map(
     "id" -> id,

@@ -43,6 +43,7 @@ object Osrm {
      p("distance_table").asInstanceOf[List[List[BigInt]]]
   }
 
+
   def getRouteAndEta(start: (Float, Float), points: List[(Float, Float)]) = {
     val endpoint = buildEndpoint("viaroute")
     val locParams = points.map { case (lat, lon) => 

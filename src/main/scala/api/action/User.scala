@@ -13,6 +13,7 @@ import com.maiden.common.MaidenConfigFactory.hostConfig
 import com.maiden.common.social.MaidenFacebook
 import com.maiden.common.exceptions._
 import com.maiden.common.Codes.StatusCode
+import com.maiden.common.Enums.RideStateType
 
 @Swagger(
   Swagger.Tags("User/Profile", "No Auth"),
@@ -51,6 +52,28 @@ class UserInfo extends UserApi with TrackableView {
         }
         case _ => throw(new NoUserException()) 
       }
+    })
+  }
+}
+
+@First
+@POST("api/user/trips/active")
+@GET("api/user/trips/active")
+@Swagger(
+  Swagger.OperationId("get"),
+  Swagger.Summary("retrieves a user's active"),
+  Swagger.IntPath("id", "the user id to retrieve")
+)
+class UserTripInfo extends AuthorizedUserApi {
+  def execute() {
+    futureExecute(() => {
+      val trip = user.get.activeTrip
+
+      val t = trip match {
+        case Some(t) => t.asMap
+        case _ => Map.empty
+      }
+      (R.OK, t)
     })
   }
 }

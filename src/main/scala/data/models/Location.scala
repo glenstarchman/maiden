@@ -12,7 +12,7 @@ import MaidenSchema._
 import com.maiden.common.MaidenCache._
 import com.maiden.common.exceptions._
 import com.maiden.common.Codes._
-import com.maiden.common.PubnubHelper
+import com.maiden.common.{PubnubHelper, Osrm, Geo}
 
 case class GpsLocation(override var id: Long=0, 
                 var userId: Long = 0,
@@ -61,6 +61,35 @@ object GpsLocation extends CompanionTable[GpsLocation] {
       case Some(v) => {
         PubnubHelper.send(v.getHash(), gps.asMap)
         PubnubHelper.send("route-" + v.routeId.toString, gps.asMap)
+        //for each upcoming trip... update the ETA
+        Trip.getPendingForDriver(userId).foreach(t => {
+          val routeStops = Route.getStops(t.routeId)
+          val closest = Stop.getClosestStop(gps.latitude, gps.longitude)
+          val pickup = Stop.get(t.pickupStop).get
+          if (closest("id").toString.toLong == pickup.id) {
+            val o = Osrm.getRouteAndEta((gps.latitude, gps.longitude),
+                                         List((closest("latitude").toString.toFloat, closest("longitude").toString.toFloat)))
+
+            PubnubHelper.send(t.getHash(), Map("eta" -> o("eta").toString.toInt))
+          } else {
+            val closestStopLoc = (closest("longitude").toString.toFloat, 
+                                  closest("latitude").toString.toFloat)
+          
+            val c = Stop.get(closest("id").toString.toLong).get
+            println(c)
+            val betweenLocs = Trip.getInBetweenStops(routeStops, c, pickup).map(b => {
+              val geo = Geo.latLngFromWKB(b.geom)
+              (geo("latitude").toFloat, geo("longitude").toFloat)
+            }).toList
+            println(betweenLocs)
+            val o = Osrm.getRouteAndEta((gps.latitude, gps.longitude),
+                                        betweenLocs)
+            println("sending ETA for " + t.getHash())
+            val eta = o("eta").toString.toInt + (betweenLocs.size * 120)
+            PubnubHelper.send(t.getHash(), Map("eta" -> o("eta").toString.toInt))
+          }
+        })
+
       }
       case _ => ()
     }

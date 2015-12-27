@@ -14,6 +14,7 @@ import com.maiden.common.MaidenConfigFactory.generalConfig
 import com.maiden.data.ConnectionPool
 import com.maiden.common.exceptions._
 import com.maiden.common.Codes._
+import com.maiden.common.Enums._
 
 object UserHelper {
 
@@ -71,10 +72,23 @@ case class User(override var id: Long=0,
                 var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis)) 
   extends FriendlyIdable with BaseMaidenTableWithTimestamps {
 
-  def activeTrips() = fetch {
-    from(Trips)(t => 
-    where(t.userId === id)
-    select(t))
+  def activeTrip() = {
+    val validStates = List(
+      //RideStateType.Initial.id,
+      //RideStateType.FindingVehicle.id,
+      RideStateType.VehicleAccepted.id,
+      RideStateType.VehicleOnWay.id,
+      RideStateType.RideUnderway.id
+    )
+    
+    fetchOne {
+      from(Trips)(t => 
+      where(
+        (t.userId === id ) and
+        (t.rideState in validStates)
+      ) 
+      select(t))
+    }
   }
 
   override def extraMap() = Map(
@@ -96,8 +110,14 @@ case class User(override var id: Long=0,
         case Some(y) => y.asMap
         case _ => Map.empty
       }
-    },
-    "activeTrips" -> activeTrips
+    }
+    /*"activeTrip" -> {
+      activeTrip match {
+        case Some(t) => t.asMap
+        case _ => Map.empty
+      }
+    }
+    */
   ) ++  extraMap
 
   def asMiniMap() = Map(

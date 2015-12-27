@@ -53,6 +53,24 @@ case class Trip(override var id: Long=0,
           case Some(v) => v.asMap
           case _ => Map.empty
         }
+      },
+      "driver" -> {
+        User.get(driverId) match {
+          case Some(d) => d.asMap
+          case _ => Map.empty
+        }
+      },
+      "pickup" -> {
+        Stop.get(pickupStop) match {
+          case Some(p) => p.asMap
+          case _ => Map.empty
+        }
+      },
+      "dropoff" -> {
+        Stop.get(dropoffStop) match {
+          case Some(d) => d.asMap
+          case _ => Map.empty
+        }
       }
     )
 
@@ -111,10 +129,27 @@ object Trip extends CompanionTable[Trip] {
       select(t))
     }
   }
+  
+  def getPendingForDriver(driverId: Long) = {
+    val validStates = List(
+      RideStateType.VehicleAccepted.id,
+      RideStateType.VehicleOnWay.id
+    )
+
+    fetch {
+      from(Trips)(t =>
+      where (
+        (t.driverId === driverId) and 
+        (t.rideState in validStates)
+      )
+      select(t))
+    }
+  }
 
   def create(userId: Long, routeId: Long, 
             reservationType: Int, 
              pickupStop: Long, dropoffStop: Long) = {
+
     val trip = Trip(
       userId = userId,
       routeId = routeId,
@@ -386,16 +421,6 @@ object Trip extends CompanionTable[Trip] {
           new DateTime().plusSeconds(o("eta").toString.toInt).getMillis
         )
 
-        //grab this trips route geometry
-        /*val tripPoints = getInBetweenStops(routeStops, pickup, dropoff).map(p => {
-          val geo = Geo.latLngFromWKB(p.geom)
-            (geo("latitude").toFloat, geo("longitude").toFloat)
-        }).toList
-        */
-
-        /*val tripRoute = Osrm.getRoute(List((vLoc.latitude, vLoc.longitude)) ++ 
-                                        betweenLocs) 
-        */
 
         val tripGeom = o("geometry").asInstanceOf[List[List[Float]]].map(c =>
             List(c(0).toString.toFloat, c(1).toString.toFloat)

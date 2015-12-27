@@ -37,7 +37,7 @@ case class Stop(var id: Long = 0,
     Map(
       "latitude" -> coords("latitude"),
       "longitude" -> coords("longitude"),
-      "arrivalGeofence" -> Geo.generateBoundingBox(
+      "arringGeofence" -> Geo.generateBoundingBox(
                              coords("latitude").toString.toFloat,
                              coords("longitude").toString.toFloat,
                              300, 300),

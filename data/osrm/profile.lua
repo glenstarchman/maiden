@@ -125,21 +125,21 @@ maxspeed_table = {
   ["uk:motorway"] = (70*1609)/1000
 }
 
-traffic_signal_penalty          = 10 
+traffic_signal_penalty          = 0 
 use_turn_restrictions           = true
 
 local take_minimum_of_speeds    = true
 local obey_oneway               = true
 local obey_bollards             = true
 local ignore_areas              = true     -- future feature
-local u_turn_penalty            = 20
-local traffic_signal_penalty    = -20 
+local u_turn_penalty            = 100
+local traffic_signal_penalty    = 0 
 
 local abs = math.abs
 local min = math.min
 local max = math.max
 
-local speed_reduction = 0.8
+local speed_reduction = 0.6
 
 --modes
 local mode_normal = 1
@@ -213,9 +213,9 @@ function node_function (node, result)
 
   -- check if node is a traffic light
   local tag = node:get_value_by_key("highway")
-  --if tag and "traffic_signals" == tag then
-  --  result.traffic_lights = true;
-  --end
+  if tag and "traffic_signals" == tag then
+    result.traffic_lights = true;
+  end
 end
 
 function way_function (way, result)

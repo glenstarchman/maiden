@@ -52,6 +52,30 @@ class TripInfo extends AuthorizedTripApi {
   }
 }
 
+@POST("api/trip/:id/route")
+@GET("api/trip/:id/route")
+@Swagger(
+  Swagger.OperationId("get_trip_route"),
+  Swagger.Summary("get a trip's route"),
+  Swagger.IntPath("id", "The trip id")
+)
+class TripRouteInfo extends AuthorizedTripApi {
+  def execute() {
+    //only the booking user, the assigned driver, or an admin can see
+    //for now anyone will do... for testing
+    futureExecute(() => { 
+      val trip = Trip.get(param[Long]("id")).get
+      val tripGeo = Trip.getTripRoute(trip)
+      val driverId = trip.driverId
+      val userId = trip.userId
+      if (user.get.id == userId || user.get.id == driverId) { 
+        (R.OK, tripGeo)
+      } else {
+        throw(new UnauthorizedException())
+      }
+    })
+  }
+}
 @First
 @POST("api/trip/book")
 @GET("api/trip/book")

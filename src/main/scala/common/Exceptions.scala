@@ -165,3 +165,9 @@ class InvalidRideStateException(
     code: StatusCode = R.INVALID_RIDE_STATE,
     exc: Option[Exception] = None) 
   extends MaidenException(message, code, exc = exc)
+
+class AlreadyHaveTripException(
+    message: String = "Already have ride", 
+    code: StatusCode = R.ALREADY_HAVE_TRIP,
+    exc: Option[Exception] = None) 
+  extends MaidenException(message, code, exc = exc)

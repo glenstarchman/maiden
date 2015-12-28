@@ -111,20 +111,19 @@ case class Trip(override var id: Long=0,
 
 object Trip extends CompanionTable[Trip] {
 
+  val haveRideStates = List(
+    RideStateType.VehicleAccepted.id,
+    RideStateType.VehicleOnWay.id,
+    RideStateType.RideUnderway.id
+  )
+
 
   def getForDriver(driverId: Long) = {
-    val validStates = List(
-      RideStateType.VehicleAccepted.id,
-      RideStateType.VehicleOnWay.id,
-      RideStateType.RideUnderway.id,
-      RideStateType.RideRebooked.id
-    )
-
     fetch {
       from(Trips)(t =>
       where (
         (t.driverId === driverId) and 
-        (t.rideState in validStates)
+        (t.rideState in haveRideStates)
       )
       select(t))
     }
@@ -146,22 +145,37 @@ object Trip extends CompanionTable[Trip] {
     }
   }
 
+
+  def getExisting(userId: Long) = fetchOne {
+    from(Trips)(t => 
+    where(
+      (t.userId === userId) and 
+      (t.rideState in haveRideStates)
+    )
+    select(t))
+  }
+
   def create(userId: Long, routeId: Long, 
             reservationType: Int, 
              pickupStop: Long, dropoffStop: Long) = {
 
-    val trip = Trip(
-      userId = userId,
-      routeId = routeId,
-      reservationType = reservationType,
-      pickupStop = pickupStop,
-      dropoffStop = dropoffStop,
-      rideState = RideStateType.Initial.id
-    )
+    getExisting(userId) match {
+      case Some(t) => throw(new AlreadyHaveTripException()) 
+      case _ => {
+        val trip = Trip(
+          userId = userId,
+          routeId = routeId,
+          reservationType = reservationType,
+          pickupStop = pickupStop,
+          dropoffStop = dropoffStop,
+          rideState = RideStateType.Initial.id
+        )
 
-    withTransaction {
-      Trips.upsert(trip)
-      Option(trip)
+        withTransaction {
+          Trips.upsert(trip)
+          Option(trip)
+        }
+      }
     }
   }
 
@@ -271,19 +285,13 @@ object Trip extends CompanionTable[Trip] {
 
   def getOccupiedTripsByVehicle(vehicleId: Long) = {
 
-    val validStates = List(
-      RideStateType.VehicleAccepted.id,
-      RideStateType.VehicleOnWay.id,
-      RideStateType.RideUnderway.id
-    )
-
     //need to add a time restriction here for reserved rides
     //that are far in the future
     fetch {
       from(Trips)(t =>
       where(
         (t.vehicleId === vehicleId) and
-        (t.rideState in validStates)
+        (t.rideState in haveRideStates)
       )
       select(t))
     }
@@ -323,9 +331,6 @@ object Trip extends CompanionTable[Trip] {
 
     val routeStops = Route.getStops(pickup.routeId)
 
-    val betweenStops = getInBetweenStops(routeStops, pickup, dropoff)
-    //betweenStops.foreach(b => println(b.id, b.name))
-
     val vehicle = Vehicle.get(vehicleId) match {
       case Some(v) => v
       case _ => throw(new Exception("Invalid Vehicle ID"))
@@ -337,7 +342,6 @@ object Trip extends CompanionTable[Trip] {
     //build out the occupancy table
     val occupancy = vehicle.maximumOccupancy
     val occupancyTable = buildOccupancyTable(routeStops, trips, occupancy)
-    println(occupancyTable);
     occupancyTable
   }
                          
@@ -361,7 +365,7 @@ object Trip extends CompanionTable[Trip] {
         v.driverId -> getVehicleAvailability(v.id, trip, pickup, dropoff)
       ).toMap
 
-      val tripStopIds = getInBetweenStops(routeStops, pickup, dropoff).map(_.id)
+      val tripStopIds = List(pickup.id) ++ getInBetweenStops(routeStops, pickup, dropoff).map(_.id) ++ List(dropoff.id)
 
       val availableVehicles = availabilityTable.filter { 
         case(driver, table) => {
@@ -409,7 +413,7 @@ object Trip extends CompanionTable[Trip] {
         val closestStopLoc = (closest("longitude").toString.toFloat, closest("latitude").toString.toFloat)
 
         val c = Stop.get(closest("id").toString.toLong).get
-        val betweenLocs = getInBetweenStops(routeStops, c, pickup).map(b => {
+        val betweenLocs = (List(pickup) ++ getInBetweenStops(routeStops, c, pickup) ++ List(dropoff)).map(b => {
           val geo = Geo.latLngFromWKB(b.geom)
             (geo("latitude").toFloat, geo("longitude").toFloat)
         }).toList
@@ -422,9 +426,15 @@ object Trip extends CompanionTable[Trip] {
         )
 
 
-        val tripGeom = o("geometry").asInstanceOf[List[List[Float]]].map(c =>
+        /*val tripGeom = o("geometry").asInstanceOf[List[List[Float]]].map(c =>
             List(c(0).toString.toFloat, c(1).toString.toFloat)
         )
+        */
+        val tripMeta  = Route.getRouteGeometry(trip.routeId, pickup, dropoff)
+
+        val tripGeom:List[List[Float]] = tripMeta._1.map { case(x: List[Double]) => { 
+          List(x(0).toFloat, x(1).toFloat)
+        }}
         trip.geom = Geo.latLngListToWKB(tripGeom)
       }
 
@@ -441,5 +451,27 @@ object Trip extends CompanionTable[Trip] {
 
   }
 
+  def getTripRoute(trip: Trip) = {
+    val pickup = Stop.get(trip.pickupStop).get
+    val dropoff = Stop.get(trip.dropoffStop).get
+    /*val tripGeom = Geo.latLngListFromWKB(trip.geom).map(c => 
+        List(c("longitude").toString.toFloat, c("latitude").toString.toFloat)
+    )
+    */
 
+    val tripGeom = Route.getRouteGeometry(trip.routeId)._1
+    Map(
+      "geometry" -> tripGeom,
+      "stops" -> Map( 
+        "pickup" -> pickup.asMap,
+        "dropoff" -> dropoff.asMap
+      ),
+      "vehicle" -> {
+        Vehicle.get(trip.vehicleId) match {
+          case Some(v) => v.asMap
+          case _ => Map.empty
+        }
+      }
+    )
+  }
 }

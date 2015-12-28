@@ -12,7 +12,7 @@ import MaidenSchema._
 import com.maiden.common.MaidenCache._
 import com.maiden.common.exceptions._
 import com.maiden.common.Codes._
-import com.maiden.common.Osrm
+import com.maiden.common.{Osrm, Geo}
 
 
 case class Route(override var id: Long=0, 
@@ -57,7 +57,10 @@ object Route extends CompanionTable[Route] {
     if (pickup.stopOrder < dropoff.stopOrder) {
       fetch {
         from(Stops)(s => 
-        where(s.stopOrder.between(pickup.stopOrder, dropoff.stopOrder))
+        where(
+          (s.stopOrder gt pickup.stopOrder) and  
+          (s.stopOrder lt dropoff.stopOrder)
+        )
         select(s)
         orderBy(s.stopOrder))
       }
@@ -65,24 +68,38 @@ object Route extends CompanionTable[Route] {
       //we may be going backward
       fetch {
         from(Stops)(s => 
-        where(s.stopOrder.between(pickup.stopOrder, stopCount))
+        where(
+          (s.stopOrder gt pickup.stopOrder) and 
+          (s.stopOrder lte stopCount)
+        )
         select(s)
         orderBy(s.stopOrder))
       } ++ 
       fetch {
         from(Stops)(s => 
-        where(s.stopOrder lte dropoff.stopOrder)
+        where(s.stopOrder lt dropoff.stopOrder)
         select(s)
         orderBy(s.stopOrder))
       }
     }
-
   }
+
   def getRouteGeometry(routeId: Long) = {
     val stops = Stop.getForRoute(routeId)
     val locs = stops.map(stop => (stop("latitude").toString.toFloat, stop("longitude").toString.toFloat))
     val geometry = Osrm.getRoute(locs)
     (geometry, stops)
+  }
+
+  def getRouteGeometry(routeId: Long, pickupStop: Stop, dropoffStop: Stop) = {
+    val stops = List(pickupStop) ++  stopsBetween(pickupStop, dropoffStop) ++ List(dropoffStop)
+    val locs = stops.map(stop => {
+      val coords = Geo.latLngFromWKB(stop.geom) 
+      (coords("latitude").toString.toFloat, coords("longitude").toString.toFloat)
+    })
+    val geometry = Osrm.getRouteUnenclosed(locs)
+    (geometry, stops)
+
   }
 
   def getAllActiveRoutes() = fetch {

@@ -69,8 +69,13 @@ object GpsLocation extends CompanionTable[GpsLocation] {
           if (closest("id").toString.toLong == pickup.id) {
             val o = Osrm.getRouteAndEta((gps.latitude, gps.longitude),
                                          List((closest("latitude").toString.toFloat, closest("longitude").toString.toFloat)))
-
-            PubnubHelper.send(t.getHash(), Map("eta" -> o("eta").toString.toInt))
+            
+            val m = Map(
+              "vehicleId" -> t.vehicleId,
+              "eta" -> o("eta").toString.toInt,
+              "coords" -> gps.asMap
+            ) 
+            PubnubHelper.send(t.getHash(), m)
           } else {
             val closestStopLoc = (closest("longitude").toString.toFloat, 
                                   closest("latitude").toString.toFloat)
@@ -85,8 +90,14 @@ object GpsLocation extends CompanionTable[GpsLocation] {
             val o = Osrm.getRouteAndEta((gps.latitude, gps.longitude),
                                         betweenLocs)
             println("sending ETA for " + t.getHash())
-            val eta = o("eta").toString.toInt + (betweenLocs.size * 120)
-            PubnubHelper.send(t.getHash(), Map("eta" -> o("eta").toString.toInt))
+            val m = Map(
+              "vehicleId" -> t.vehicleId,
+              "eta" -> {
+                (o("eta").toString.toInt) + (betweenLocs.size * 120)
+              },
+              "coords" -> gps.asMap
+            ) 
+            PubnubHelper.send(t.getHash(), m)
           }
         })
 

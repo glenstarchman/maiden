@@ -72,6 +72,7 @@ object Codes {
   /* TRIP = 500 */
   case object TRIP_NOT_FOUND extends StatusCode(-501, "TRIP_NOT_FOUND", "The trip cannot be found")
   case object INVALID_RIDE_STATE extends StatusCode(-502, "INVALID_RIDE_STATE", "The ride state is invalid")
+  case object ALREADY_HAVE_TRIP extends StatusCode(-503, "ALREADY_HAVE_TRIP", "The user already has an existing trip")
 
 
 

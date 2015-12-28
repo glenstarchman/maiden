@@ -26,6 +26,18 @@ object Osrm {
      geom ++ List(geom(0))
   }
 
+  def getRouteUnenclosed(locs: List[(Float, Float)]) = {
+    val endpoint = buildEndpoint("viaroute")
+    val locParams = locs.map { case (lat, lon) => 
+      s"loc=${lat},${lon}"
+     }.mkString("&") + s"&loc=${locs(0)._1},${locs(0)._2}"
+
+     val url = s"${endpoint}?${locParams}&compression=false"
+     val http = new HttpClient(url)
+     val p = http.fetchAsMap()
+     val geom = p("route_geometry").asInstanceOf[List[List[(Float, Float)]]]
+     geom 
+  }
   //this is where we can algorithmically add/subtract 
   //from the ETA based on time of day, etc...
   private[this] def fixupTime(d: DateTime) = {
@@ -38,6 +50,7 @@ object Osrm {
       s"loc=${lat},${lon}"
      }.mkString("&") 
      val url = s"${endpoint}?loc=${start._1},${start._2}&${locParams}"
+     println(url)
      val http = new HttpClient(url)
      val p = http.fetchAsMap()
      p("distance_table").asInstanceOf[List[List[BigInt]]]
@@ -51,6 +64,7 @@ object Osrm {
      }.mkString("&") 
      val url = s"${endpoint}?loc=${start._1},${start._2}&${locParams}&compression=false"
      val http = new HttpClient(url)
+     println(url)
      val p = http.fetchAsMap()
      val geometry = p("route_geometry")
      val summary = p("route_summary").asInstanceOf[Map[String, Any]]

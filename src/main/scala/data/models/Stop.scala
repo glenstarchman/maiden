@@ -32,6 +32,7 @@ case class Stop(var id: Long = 0,
           var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis)) 
 
   extends BaseMaidenTableWithTimestamps {
+
   override def extraMap() = {
     val coords = Geo.latLngFromWKB(geom) 
     Map(

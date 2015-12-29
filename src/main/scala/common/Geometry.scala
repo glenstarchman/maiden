@@ -7,6 +7,7 @@ import org.opentripplanner.common.geometry.SphericalDistanceLibrary
 
 
 object Geo {
+  implicit def dbl2flt(d: java.lang.Double) = d.toFloat
 
   lazy val gm = new GeometryFactory(new PrecisionModel(), 4326)
 
@@ -37,7 +38,9 @@ object Geo {
 
   def latLngListToWKB(coords: List[List[Float]]) = {
     val points = coords.map(c => 
-        makePoint(c(0), c(1))
+        makePoint(
+          c(0).toString.toDouble, 
+          c(1).toString.toDouble)
           .getCoordinate)
       .toArray
     val route = gm.createLineString(points)
@@ -46,7 +49,7 @@ object Geo {
 
   }
 
-  def makePoint(lat: Float, lng: Float) = gm.createPoint(new Coordinate(lat,lng))
+  def makePoint(lat: Double, lng: Double) = gm.createPoint(new Coordinate(lat,lng))
 
   def generateBoundingBox(lat: Float, lng: Float, 
       latDistance: Int, lonDistance: Int) = {

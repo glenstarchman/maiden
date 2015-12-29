@@ -111,6 +111,8 @@ case class Trip(override var id: Long=0,
 
 object Trip extends CompanionTable[Trip] {
 
+  implicit def dbl2flt(d: java.lang.Double) = d.toFloat
+
   val haveRideStates = List(
     RideStateType.VehicleAccepted.id,
     RideStateType.VehicleOnWay.id,
@@ -277,6 +279,19 @@ object Trip extends CompanionTable[Trip] {
     isProcessing = Option(false)
   )
 
+  def getVehicleOverdue() = {
+    val now = new DateTime(System.currentTimeMillis) 
+    val tenMinutesAgo = new Timestamp(now.minusMinutes(10).getMillis)
+    fetch {
+      from(Trips)(t =>  
+      where(
+        (t.rideState === RideStateType.VehicleAccepted.id) and
+        (t.eta lt tenMinutesAgo)
+      )
+      select(t))
+    }
+  }
+
   def getStops(pickupId: Long, dropoffId: Long) = fetchOne {
     from(Stops, Stops)((pickup, dropoff) =>
     where(pickup.id === pickupId and dropoff.id === dropoffId)
@@ -311,15 +326,17 @@ object Trip extends CompanionTable[Trip] {
   }
   
   def getInBetweenStops(routeStops: List[Stop], pickup: Stop, dropoff: Stop) = {
-    if (pickup.stopOrder < dropoff.stopOrder) {
+    if (pickup.stopOrder == dropoff.stopOrder) {
+      List.empty
+    } else if (pickup.stopOrder < dropoff.stopOrder) {
       routeStops.filter(f => 
-          f.stopOrder >= pickup.stopOrder &&
-          f.stopOrder <= dropoff.stopOrder
+          f.stopOrder > pickup.stopOrder &&
+          f.stopOrder < dropoff.stopOrder
        )
     } else {
-      val after = routeStops.filter(f => f.stopOrder >= pickup.stopOrder)
+      val after = routeStops.filter(f => f.stopOrder > pickup.stopOrder)
         .sortBy(_.stopOrder)  
-      val before = routeStops.filter(f => f.stopOrder <= dropoff.stopOrder)
+      val before = routeStops.filter(f => f.stopOrder < dropoff.stopOrder)
         .sortBy(_.stopOrder)
       after ++ before
     }
@@ -332,7 +349,7 @@ object Trip extends CompanionTable[Trip] {
     val routeStops = Route.getStops(pickup.routeId)
 
     val vehicle = Vehicle.get(vehicleId) match {
-      case Some(v) => v
+      case Some(v)  => v
       case _ => throw(new Exception("Invalid Vehicle ID"))
     }
 
@@ -345,6 +362,30 @@ object Trip extends CompanionTable[Trip] {
     occupancyTable
   }
                          
+  /*
+  def assignVehicleForOnDemand2(trip: Trip) = {
+    Trip.setProcessing(trip.id, true)
+    trip.isProcessing = true
+
+    val routeStops = Route.getStops(trip.routeId)
+    val vehicles = Vehicle.getForRouteRaw(trip.routeId) 
+    val (pickup, dropoff) = getStops(trip.pickupStop, trip.dropoffStop) match {
+      case Some((p,d)) => (p,d)
+      case _ => throw(new Exception("no stops"))
+    }
+
+    val tripStopIds = List(pickup.id) ++ 
+               getInBetweenStops(routeStops, pickup, dropoff).map(_.id) ++ 
+               List(dropoff.id)
+
+    val availableVehicles = for {
+      vehicle <- vehicles
+      availabilityTable = getVehicleAvailability(vehicle.id, trip, pickup, dropoff)
+      availableVehicle = if (availabilityTable.filter{ case(k,v) => v > 0 }.size == tripStopIds.size) Option(vehicle) else None
+
+    } yield(availableVehicle)
+
+  */
   //search for a vehicle that has occupancy for this trip
   //this is only called from DispatchActor
   //and selects the closest driver
@@ -354,9 +395,9 @@ object Trip extends CompanionTable[Trip] {
     val routeStops = Route.getStops(trip.routeId)
     if (trip.isProcessing) {
       val vehicles = Vehicle.getForRouteRaw(trip.routeId)
-      //need to get vehicles with availability here
+      val (pickup, dropoff) = 
+        getStops(trip.pickupStop, trip.dropoffStop) match {
 
-      val (pickup, dropoff) = getStops(trip.pickupStop, trip.dropoffStop) match {
         case Some((p, d)) => (p,d)
         case _ => throw(new Exception("no stops"))
       }
@@ -368,17 +409,18 @@ object Trip extends CompanionTable[Trip] {
       val tripStopIds = List(pickup.id) ++ getInBetweenStops(routeStops, pickup, dropoff).map(_.id) ++ List(dropoff.id)
 
       val availableVehicles = availabilityTable.filter { 
-        case(driver, table) => {
-          tripStopIds.filter(ts => table(ts) > 0).size > 0
-        }
+        case(driver, table) if table.size > 0 => {
+            tripStopIds.filter(ts => table(ts) > 0).size == tripStopIds.size 
+          } 
+          case _ =>  false 
       }.map { 
-      case(driverId, a)  => 
-        vehicles.filter(_.driverId == driverId) } match {
-          case x:List[Vehicle] if x.size > 0 => x.head 
-          case _ => List[Vehicle]() 
-        }
-
-       println(availableVehicles)
+        case(driverId, a)  => 
+          vehicles.filter(_.driverId == driverId) } match {
+            case x:List[Vehicle] if x.size > 0 => x.head 
+            case _ => List[Vehicle]() 
+          }
+        
+       //println(availableVehicles)
       //short-circuit if only one vehicle 
       val bookedTrip = availableVehicles.size match {
         case 0 => trip.rideState = RideStateType.NoAvailableVehicles.id 
@@ -413,28 +455,36 @@ object Trip extends CompanionTable[Trip] {
         val closestStopLoc = (closest("longitude").toString.toFloat, closest("latitude").toString.toFloat)
 
         val c = Stop.get(closest("id").toString.toLong).get
-        val betweenLocs = (List(pickup) ++ getInBetweenStops(routeStops, c, pickup) ++ List(dropoff)).map(b => {
+        println(Geo.latLngFromWKB(c.geom))
+        val driverBetweenLocs = (List(c) ++ getInBetweenStops(routeStops, c, pickup) ++ List(pickup)).map(b => {
           val geo = Geo.latLngFromWKB(b.geom)
             (geo("latitude").toFloat, geo("longitude").toFloat)
         }).toList
 
         val o = Osrm.getRouteAndEta((vLoc.latitude, vLoc.longitude), 
-                                    betweenLocs) 
+                                    driverBetweenLocs) 
         //set our ETA on the trip
         trip.eta = new Timestamp(
           new DateTime().plusSeconds(o("eta").toString.toInt).getMillis
         )
 
+        val tripBetweenLocs = (getInBetweenStops(routeStops, pickup, dropoff) ++ List(dropoff)).map(b => {
+          val geo = Geo.latLngFromWKB(b.geom)
+            (geo("latitude").toFloat, geo("longitude").toFloat)
+        }).toList
+
+        val pickupLoc = Geo.latLngFromWKB(pickup.geom) 
+
+        val o2 = Osrm.getRouteAndEta((pickupLoc("latitude").toFloat, pickupLoc("longitude").toFloat), tripBetweenLocs)
+        val tripGeom = o2("geometry").asInstanceOf[List[List[Float]]]
 
         /*val tripGeom = o("geometry").asInstanceOf[List[List[Float]]].map(c =>
             List(c(0).toString.toFloat, c(1).toString.toFloat)
         )
         */
-        val tripMeta  = Route.getRouteGeometry(trip.routeId, pickup, dropoff)
+        //val tripMeta  = Route.getRouteGeometry(trip.routeId, pickup, dropoff)
 
-        val tripGeom:List[List[Float]] = tripMeta._1.map { case(x: List[Double]) => { 
-          List(x(0).toFloat, x(1).toFloat)
-        }}
+        //val tripGeom:List[List[Float]] = o2("geometry").asInstanceOf[List[List[Double]]].map(c => List(c(0).toString.toFloat, c(1).toString.toFloat))
         trip.geom = Geo.latLngListToWKB(tripGeom)
       }
 
@@ -454,12 +504,10 @@ object Trip extends CompanionTable[Trip] {
   def getTripRoute(trip: Trip) = {
     val pickup = Stop.get(trip.pickupStop).get
     val dropoff = Stop.get(trip.dropoffStop).get
-    /*val tripGeom = Geo.latLngListFromWKB(trip.geom).map(c => 
+    val tripGeom = Geo.latLngListFromWKB(trip.geom).map(c => 
         List(c("longitude").toString.toFloat, c("latitude").toString.toFloat)
     )
-    */
-
-    val tripGeom = Route.getRouteGeometry(trip.routeId)._1
+    //val tripGeom = Route.getRouteGeometry(trip.routeId)._1
     Map(
       "geometry" -> tripGeom,
       "stops" -> Map( 

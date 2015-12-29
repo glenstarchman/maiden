@@ -1,12 +1,13 @@
 package com.maiden.actors
 
+import org.joda.time._
 import akka.actor.Actor
 import akka.actor.Props
 import scala.concurrent.duration._
 import scala.collection.mutable.{Map => MMap}
 import com.maiden.data.models._
 import com.maiden.common.Enums._
-import com.maiden.common.PubnubHelper
+import com.maiden.common.{Log, PubnubHelper}
 
 case object CheckRideState
 case object SendNotifications
@@ -14,7 +15,7 @@ case object SendSMS
 case object SendEmails
 case object HandleBilling
 
-object DispatchActor {
+object DispatchActor extends Log {
 
   val system = akka.actor.ActorSystem("system")
 
@@ -48,6 +49,11 @@ object DispatchActor {
                   Trip.assignVehicleForReservation(trip)
                 }
               })
+
+              Trip.getVehicleOverdue.par.foreach(trip => {
+                Trip.updateState(trip.id, RideStateType.DriverNoShow.id)
+              })
+
               toggleState("rideState")
             }
           }

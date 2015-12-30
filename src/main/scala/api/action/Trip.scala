@@ -107,6 +107,37 @@ class BookTrip extends AuthorizedTripApi {
   }
 }
 
+@First
+@POST("api/trip/:id/update/state/:state")
+@GET("api/trip/:id/update")
+@Swagger(
+  Swagger.OperationId("update_trip"),
+  Swagger.Summary("Update trip data"),
+  Swagger.IntPath("id", "The trip id"),
+  Swagger.IntPath("state", "The ride state")
+)
+class UpdateTripState extends AuthorizedTripApi {
+  def execute() {
+    //only the booking user, the assigned driver, or an admin can see
+    //for now anyone will do... for testing
+    futureExecute(() => { 
+      val userId = user.get.id
+      val trip = Trip.get(param[Long]("id")) match {
+        case Some(t) => t
+        case _ => throw(new NoTripException())
+      }
+      if (user.get.id == trip.userId || user.get.id == trip.driverId) { 
+        //update the state
+        val t = Trip.updateState(trip.id, param[Int]("state"))
+        (R.OK, t.miniUpdateMap)
+      } else {
+        throw(new UnauthorizedException())
+      }
+    })
+  }
+}
+
+
 
 @POST("api/trip/:id/updates")
 @GET("api/trip/:id/updates")

@@ -59,7 +59,8 @@ object Route extends CompanionTable[Route] {
         from(Stops)(s => 
         where(
           (s.stopOrder gt pickup.stopOrder) and  
-          (s.stopOrder lt dropoff.stopOrder)
+          (s.stopOrder lt dropoff.stopOrder) and
+          (s.routeId === pickup.routeId)
         )
         select(s)
         orderBy(s.stopOrder))
@@ -70,14 +71,18 @@ object Route extends CompanionTable[Route] {
         from(Stops)(s => 
         where(
           (s.stopOrder gt pickup.stopOrder) and 
-          (s.stopOrder lte stopCount)
+          (s.stopOrder lte stopCount) and
+          (s.routeId === pickup.routeId)
         )
         select(s)
         orderBy(s.stopOrder))
       } ++ 
       fetch {
         from(Stops)(s => 
-        where(s.stopOrder lt dropoff.stopOrder)
+        where(
+          (s.stopOrder lt dropoff.stopOrder) and
+          (s.routeId === pickup.routeId)
+        )
         select(s)
         orderBy(s.stopOrder))
       }

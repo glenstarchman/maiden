@@ -23,7 +23,9 @@ case class Stop(var id: Long = 0,
           var description: String = "",
           var details: String = "",
           var thumbnail: String = "",
-          val geom: String = "",
+          var geom: String = "",
+          var bearing: Float = 0f,
+          var bearing_name: String = "",
           var active: Boolean = true,
           var markerType: String = "glass",
           var markerColor: String = "red",
@@ -36,6 +38,7 @@ case class Stop(var id: Long = 0,
   override def extraMap() = {
     val coords = Geo.latLngFromWKB(geom) 
     Map(
+      "bearing" -> None,
       "latitude" -> coords("latitude"),
       "longitude" -> coords("longitude"),
       "arringGeofence" -> Geo.generateBoundingBox(
@@ -57,30 +60,56 @@ case class Stop(var id: Long = 0,
 
 object Stop extends CompanionTable[Stop] {
 
-  def getAllStops(routeId: Option[Long] = None): List[Map[String, Any]] = {
-    var sql = routeId match {
-      case Some(id) => s"""
+  def generateBearings(routeId: Long) = {
+    val stops = fetch {
+      from(Stops)(s => 
+      where(s.routeId === routeId)
+      select(s)
+      orderBy(s.stopOrder))
+    }
+
+    val allStops = (stops ++ List(stops(0)))
+    allStops.zipWithIndex.foreach{ case (s,i) => { 
+      val j = i + 1
+      if (j < allStops.size) {
+        val stop1 = Geo.latLngFromWKB(s.geom)
+        val stop2 = Geo.latLngFromWKB(allStops(j).geom)
+        val bearing = Geo.bearing(
+                 stop1("latitude"),
+                 stop1("longitude"),
+                 stop2("latitude"),
+                 stop2("longitude"))
+        s.bearing = bearing._1.toFloat
+        s.bearing_name = bearing._2
+        withTransaction {
+          Stops.upsert(s)
+        }
+      }
+    }} 
+  }
+
+  def getAllStops(routeId: Option[Long] = None, stopId: Option[Long] = None): List[Map[String, Any]] = {
+    var sql = """
         select id, route_id, stop_order, name, address, description, 
          details, thumbnail, 
          active, marker_type, marker_color, show_marker,
          created_at, updated_at,
          ST_Y(geom) as latitude,
-         ST_X(geom) as longitude
+         ST_X(geom) as longitude,
+         bearing_name
          from stop
-         where route_id = ${id}
-         order by stop_order asc
-         """
-      case _ => s"""
-         select id, route_id, stop_order, name, address, description, 
-         details, thumbnail,
-         active, marker_type, marker_color, show_marker,
-         created_at, updated_at,
-         ST_Y(geom) as latitude,
-         ST_X(geom) as longitude
-         from stop
-         order by stop_order asc
-         """
+    """
+
+    routeId match {
+      case Some(id) => sql += s"where route_id = ${id} "
+      case _ => ()
     }
+
+    stopId match {
+      case Some(id) => sql += s"and id = ${id} "
+      case _ => ()
+    }
+    sql += " order by stop_order "
 
     var results = ListBuffer[Map[String, Any]]()
     rawQuery(sql, (rs) => {
@@ -96,18 +125,33 @@ object Stop extends CompanionTable[Stop] {
     })
     results.map(r => r ++ Map(
       "arrivalGeofence" -> Geo.generateBoundingBox(
-                             r("longitude").toString.toFloat,
                              r("latitude").toString.toFloat,
+                             r("longitude").toString.toFloat,
                              300, 300),
        
       "warningGeofence" -> Geo.generateBoundingBox(
-                             r("longitude").toString.toFloat,
                              r("latitude").toString.toFloat,
+                             r("longitude").toString.toFloat,
                              1000, 1000),
 
       "nextArrival" -> new DateTime().plusMinutes(12).toString,
       "arrivals" -> List("11:15", "11:30", "12:00", "12:30")
     )).toList
+  }
+
+  def getStop(routeId: Long, stopId: Long):Map[String, Any] = { 
+    val stop = getAllStops(Option(routeId), Option(stopId)) match {
+      case x: List[_] if x.size == 1 => x(0)
+      case _ => throw(new Exception("Stop does not exist")) 
+    }
+
+    val stopObj = Stop.get(stop.asInstanceOf[Map[String, Any]]("id").toString.toLong).get
+
+    val dropOffs = Route.stopsBetween(stopObj, stopObj)
+    Map(
+      "stop" -> stop,
+      "dropOffs" -> dropOffs
+    )
   }
 
   def getForRoute(routeId: Long) = getAllStops(Option(routeId)) 

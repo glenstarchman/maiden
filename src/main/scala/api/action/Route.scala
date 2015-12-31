@@ -50,6 +50,26 @@ class RouteInfo extends RouteApi {
   }
 }
 
+@POST("api/route/:routeId/stop/:stopId")
+@GET("api/route/:routeId/stop/:stopId")
+@Swagger(
+  Swagger.OperationId("get_route_stop"),
+  Swagger.Summary("retrieves a route stop"),
+  Swagger.IntPath("routeId", "the route id"),
+  Swagger.IntPath("stopId", "the stop id")
+)
+class RouteStopInfo extends RouteApi {
+  def execute() {
+    futureExecute(() => {
+      val routeId = param[Long]("routeId")
+      val stopId = param[Long]("stopId")
+      val data = Stop.getStop(routeId, stopId) 
+      //returns Tuple2[geometry, stops]
+      (R.OK, data) 
+    })
+  }
+}
+
 @First
 @POST("api/route/active")
 @GET("api/route/active")

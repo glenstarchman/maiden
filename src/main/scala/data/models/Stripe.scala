@@ -21,7 +21,15 @@ case class Stripe(override var id: Long=0,
                   var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis) 
 ) extends BaseMaidenTableWithTimestamps {
 
-
+  //don't pass customer token back to client!
+  override def asMap() = Map(
+    "description" -> description,
+    "last4" -> last4,
+    "brand"-> brand,
+    "idDefault" -> isDefault,
+    "createdAt" -> createdAt,
+    "updatedAt" -> updatedAt
+  )
 }
 
 object Stripe extends CompanionTable[Stripe] {

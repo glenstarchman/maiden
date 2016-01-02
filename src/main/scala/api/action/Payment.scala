@@ -2,6 +2,7 @@ package com.maiden.api.action
 
 import xitrum.annotation.{GET, POST, First, Swagger}
 import com.maiden.common.StripeHelper
+import com.maiden.data.models.Stripe
 import com.maiden.common.exceptions._
 import com.maiden.common.Codes.StatusCode
 import com.maiden.common.Enums._
@@ -51,3 +52,21 @@ class AddPayment extends AuthorizedPaymentApi {
   }
 }
 
+@POST("api/payment/list")
+@GET("api/payment/list")
+@Swagger(
+  Swagger.OperationId("list_payment_methods"),
+  Swagger.Summary("lists all payment method")
+)
+class ListPaymentMethods extends AuthorizedPaymentApi {
+  def execute() {
+    futureExecute(() => { 
+      val cards = Stripe.getForUser(user.get.id)
+      val r = Map(
+        "cards" -> cards.map(_.asMap)
+      )
+      (R.OK, r)
+    })
+  }
+
+}

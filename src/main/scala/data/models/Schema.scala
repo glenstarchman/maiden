@@ -197,6 +197,7 @@ object MaidenSchema extends Schema with  PrimitiveTypeMode with Log {
   /* overrides to make table and column names sane */
   private[this] def columnize(s: String) = underscore(s) match { 
     case "user" => "users"
+    case "setting" => "settings"
     case colName: String  =>  colName 
   }
 
@@ -225,6 +226,7 @@ object MaidenSchema extends Schema with  PrimitiveTypeMode with Log {
   val Fares = table[Fare]
   val Stops = table[Stop]
   var Stripes = table[Stripe]
+  var Settings = table[Setting]
 
   /* for lookup */
   val lookup = Map(
@@ -241,7 +243,8 @@ object MaidenSchema extends Schema with  PrimitiveTypeMode with Log {
     "Trip" -> Trips,
     "Fare" -> Fares,
     "Stop" -> Stops,
-    "Stripe" -> Stripes
+    "Stripe" -> Stripes,
+    "Setting" -> Settings
   )
 
 }

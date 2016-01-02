@@ -164,8 +164,38 @@ class ValidateAccessToken extends UserApi {
   }
 }
 
+@First
+@GET("/api/user/settings")
+@POST("/api/user/settings")
+@Swagger(
+  Swagger.OperationId("get_user_settings"),
+  Swagger.Summary("Get a user's settings")
+)
+class UserSettings extends AuthorizedUserApi {
+  def execute() {
+    futureExecute(() => {
+      val settings = Setting.getForUser(user.get.id).map(_.asMap)
+      (R.OK, settings)
+    })
+  }
+}
 
-
+@GET("/api/user/settings/update")
+@POST("/api/user/settings/update")
+@Swagger(
+  Swagger.OperationId("update_user_settings"),
+  Swagger.Summary("Update user's settings"),
+  Swagger.StringPath("name", "The setting's name"),
+  Swagger.StringPath("value", "The setting's value")
+)
+class UserUpdateSettings extends AuthorizedUserApi {
+  def execute() {
+    futureExecute(() => {
+      val s = Setting.createOrUpdate(user.get.id, param[String]("name"), param[String]("value"))
+      (R.OK, s.asMap)
+    })
+  }
+}
 
 @GET("/api/user/account/create")
 @POST("/api/user/account/create")

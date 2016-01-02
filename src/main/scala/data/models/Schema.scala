@@ -224,6 +224,7 @@ object MaidenSchema extends Schema with  PrimitiveTypeMode with Log {
   val Trips = table[Trip]
   val Fares = table[Fare]
   val Stops = table[Stop]
+  var Stripes = table[Stripe]
 
   /* for lookup */
   val lookup = Map(
@@ -239,7 +240,8 @@ object MaidenSchema extends Schema with  PrimitiveTypeMode with Log {
     "GpsLocation" -> GpsLocations,
     "Trip" -> Trips,
     "Fare" -> Fares,
-    "Stop" -> Stops
+    "Stop" -> Stops,
+    "Stripe" -> Stripes
   )
 
 }

@@ -45,7 +45,8 @@ class SystemVariables extends SystemApi {
         "pubnub.publish_key" -> config("pubnub.publish_key"),
         "pubnub.subscribe_key" -> config("pubnub.subscribe_key"),
         "raygun.api_key" -> config("raygun.api_key"),
-        "host.url" -> config("host.url")
+        "host.url" -> config("host.url"),
+        "stripe.pub_key" -> config("stripe.pub_key")
       ) 
       (R.OK, data)
     })

@@ -33,6 +33,11 @@ object MaidenConfigFactory {
     "pubnub.secret_key" -> conf.getString("pubnub.secret_key")
   )
 
+  lazy val stripeConfig = Map(
+    "stripe.secret_key" -> conf.getString("stripe.secret_key"),
+    "stripe.pub_key" -> conf.getString("stripe.pub_key")
+  )
+
   lazy val dbConfig = Map( 
     "db.host" -> conf.getString("db.host"),
     "db.user" -> conf.getString("db.user"),
@@ -89,7 +94,8 @@ object MaidenConfigFactory {
   lazy val config = generalConfig ++ basicAuth ++ osrmConfig ++ 
                     awsConfig ++ dbConfig ++ memcachedConfig ++ 
                     cdnConfig ++ adminConfig ++ mailConfig ++ 
-                    hostConfig ++ facebookConfig ++ pubnubConfig
+                    hostConfig ++ facebookConfig ++ pubnubConfig ++
+                    stripeConfig
 
 
 }

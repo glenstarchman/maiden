@@ -91,11 +91,17 @@ object MaidenConfigFactory {
     "fb.app_id" -> conf.getString("fb.app_id")
   )
 
+  lazy val ionicConfig = Map(
+    "ionic.app_id" -> conf.getString("ionic.app_id"),
+    "ionic.api_key" -> conf.getString("ionic.api_key"),
+    "ionic.secret_key" -> conf.getString("ionic.secret_key")
+  )
+
   lazy val config = generalConfig ++ basicAuth ++ osrmConfig ++ 
                     awsConfig ++ dbConfig ++ memcachedConfig ++ 
                     cdnConfig ++ adminConfig ++ mailConfig ++ 
                     hostConfig ++ facebookConfig ++ pubnubConfig ++
-                    stripeConfig
+                    stripeConfig ++ ionicConfig
 
 
 }

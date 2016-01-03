@@ -5,6 +5,8 @@
 package com.maiden.common.helpers
 
 import java.security.SecureRandom
+import java.util.Base64
+import java.nio.charset.StandardCharsets
 import com.roundeights.hasher.Algo
 import com.roundeights.hasher.Implicits._
 import scala.language.postfixOps
@@ -12,7 +14,8 @@ import scala.language.postfixOps
 object Hasher {
 
   private[this] def hashUsing(algo: Algo, string: String) = algo(string)
-
+  
+  def base64(s: String) = Base64.getEncoder.encodeToString(s.getBytes(StandardCharsets.UTF_8))
   /* with salt */
   def md5(salt: String, s: String) = hashUsing(Algo.hmac(salt).md5, s).hex
   def sha256(salt: String, s: String) = hashUsing(Algo.hmac(salt).sha256, s).hex

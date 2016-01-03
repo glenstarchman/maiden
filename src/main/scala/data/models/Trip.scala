@@ -13,7 +13,7 @@ import com.maiden.common.MaidenCache._
 import com.maiden.common.exceptions._
 import com.maiden.common.Codes._
 import com.maiden.common.Enums._
-import com.maiden.common.{Geo, Osrm, PubnubHelper}
+import com.maiden.common.{Geo, Osrm, PubnubHelper, PushNotification}
 import com.maiden.common.helpers.Hasher
 
 case class Trip(override var id: Long=0, 

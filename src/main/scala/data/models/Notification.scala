@@ -17,6 +17,7 @@ case class Notification(override var id: Long=0,
                 var userId: Long = 0,
                 var token: String = "",
                 var deviceType: String = "",
+                var uuid: String = "",
                 var createdAt: Timestamp=new Timestamp(System.currentTimeMillis), 
                 var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis) 
 ) extends BaseMaidenTableWithTimestamps {
@@ -27,18 +28,24 @@ case class Notification(override var id: Long=0,
 object Notification extends CompanionTable[Notification] {
 
 
-  def exists(userId: Long, token: String) = fetchOne {
+  def exists(userId: Long, deviceType: String, uuid: String) = fetchOne {
     from(Notifications)(n => 
-    where(n.userId === userId and n.token === token)
+    where(n.userId === userId and n.deviceType === deviceType and n.uuid === uuid)
     select(n))
   }
 
-  def create(userId: Long, token: String, deviceType: String) = {
-    exists(userId, token) match {
+  def create(userId: Long, token: String, deviceType: String, uuid: String) = {
+    exists(userId, deviceType, uuid) match {
       //do not create if it exists
-      case Some(x) => x
+      case Some(x) => {
+        x.token = token
+        withTransaction {
+          Notifications.upsert(x);
+          x 
+        }
+      }
       case _ => {
-        val n = Notification(userId = userId, token = token, deviceType = deviceType)
+        val n = Notification(userId = userId, token = token, deviceType = deviceType, uuid = uuid)
 
         withTransaction {
           Notifications.upsert(n)
@@ -66,9 +73,9 @@ object Notification extends CompanionTable[Notification] {
   
   //send a push notification to all of the user's registered devices
   def send(userId: Long, message: String, isProduction: Boolean = false) {
-    Future {
+    //Future {
       PushNotification.send(getTokensForUser(userId), message, isProduction)
-    }
+    //}
   }
 
 

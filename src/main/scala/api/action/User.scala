@@ -56,6 +56,30 @@ class UserInfo extends UserApi with TrackableView {
   }
 }
 
+@POST("api/user/device/add")
+@GET("api/user/device/add")
+@Swagger(
+  Swagger.OperationId("add_device"),
+  Swagger.Summary("add a notification device"),
+  Swagger.StringPath("token", "the token for the device"),
+  Swagger.StringPath("device_type", "the type of the device"),
+  Swagger.IntPath("uuid", "The device UUID")
+)
+class UserAddDevice extends AuthorizedUserApi {
+  def execute() {
+    futureExecute(() => {
+      val userId = user.get.id
+      val token = param[String]("token")
+      val deviceType = param[String]("device_type")
+      val uuid = param[String]("uuid")
+      val n = Notification.create(userId, token, deviceType, uuid)
+      (R.OK, n.asMap)
+    })
+   }
+
+
+}
+
 @First
 @POST("api/user/trips/active")
 @GET("api/user/trips/active")

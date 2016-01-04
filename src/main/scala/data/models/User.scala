@@ -333,7 +333,7 @@ object User extends CompanionTable[User] {
 
   def validatePassword(password: String) = {
     //put some checks here
-    if (password.length < 6 || password.length > 16) {
+    if (password.length < 4 || password.length > 20) {
       throw(new CreateOrUpdateFailedException(
               message = "Invalid password",
               code = INVALID_PASSWORD))
@@ -443,11 +443,14 @@ object User extends CompanionTable[User] {
   }
 
   def checkLogin(userName: String, password: String): Option[User] = {
+    println(password)
     val hashedPass = hashPassword(password)
     val u = fetchOne {
-      from(Users, SocialAccounts)((u, sa) => 
+      val s = from(Users, SocialAccounts)((u, sa) => 
       where(sa.accessToken === userName and sa.secretKey === hashedPass and sa.userId === u.id) 
       select(u))
+      println(s)
+      s
     } 
     u match {
       case Some(user) => {

@@ -253,9 +253,10 @@ class UserCreateAccount extends UserApi {
           val p = Profile.createOrUpdate(
             userId = user.id,
             firstName = firstName,
-            lastName = lastName
+            lastName = lastName,
+            profilePicture = "https://s3-us-west-2.amazonaws.com/maiden-ventures/default/default_user.jpg"
           )
-          (R.OK, user.asMap)
+          (R.OK, user.asLoginMap)
         }
         case _ => throw(new CreateOrUpdateFailedException(message="Unable to create user")) 
       }
@@ -285,16 +286,11 @@ class UserLoginWithProvider extends UserApi {
         case "identity" => {
           val username = (paramo("username") getOrElse "").toString
           val password = (paramo("password") getOrElse "").toString
-          println(username)
-          println(password)
-
           val u = User.checkLogin(username, password)
-
           u match {
             case Some(x) => (R.USER_LOGIN, x.asLoginMap)
             case _ => (R.INVALID_LOGIN_CREDENTIALS, EmptyResult)
           }
-
         }
 
         case _ => {

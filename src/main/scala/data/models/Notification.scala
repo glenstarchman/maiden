@@ -73,9 +73,9 @@ object Notification extends CompanionTable[Notification] {
   
   //send a push notification to all of the user's registered devices
   def send(userId: Long, message: String, isProduction: Boolean = false) {
-    //Future {
+    Future {
       PushNotification.send(getTokensForUser(userId), message, isProduction)
-    //}
+    }
   }
 
 

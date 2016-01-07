@@ -36,6 +36,7 @@ case class Trip(override var id: Long=0,
                 var cancellationTime: Timestamp = null,
                 var isProcessing: Boolean = false,
                 var geom: String = null,
+                var seats: Int = 1,
                 var createdAt: Timestamp=new Timestamp(System.currentTimeMillis), 
                 var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis)) 
   extends BaseMaidenTableWithTimestamps {
@@ -158,8 +159,9 @@ object Trip extends CompanionTable[Trip] {
   }
 
   def create(userId: Long, routeId: Long, 
-            reservationType: Int, 
-             pickupStop: Long, dropoffStop: Long) = {
+             reservationType: Int, 
+             pickupStop: Long, dropoffStop: Long,
+             seats: Int = 1) = {
 
     getExisting(userId) match {
       case Some(t) => throw(new AlreadyHaveTripException()) 
@@ -170,7 +172,8 @@ object Trip extends CompanionTable[Trip] {
           reservationType = reservationType,
           pickupStop = pickupStop,
           dropoffStop = dropoffStop,
-          rideState = RideStateType.Initial.id
+          rideState = RideStateType.Initial.id,
+          seats = seats
         )
 
         withTransaction {
@@ -188,7 +191,6 @@ object Trip extends CompanionTable[Trip] {
         case Some(t) => {
           t.rideState = state
           Trips.update(t)
-          println(t.asMap)
           PubnubHelper.send(t.getHash(), t.asMap)
           t
         }
@@ -312,14 +314,14 @@ object Trip extends CompanionTable[Trip] {
     }
   }
 
-  def buildOccupancyTable(stops: List[Stop], trips: List[Trip], occupancy: Int) = {
+  def buildOccupancyTable(stops: List[Stop], trips: List[Trip], occupancy: Int, seats: Int) = {
     var table = MMap[Long, Int]()
     stops.foreach(s => table(s.id) = occupancy)
     trips.foreach(t => {
       val pickup = stops.filter(_.id == t.pickupStop).head
       val dropoff = stops.filter(_.id == t.dropoffStop).head
       getInBetweenStops(stops, pickup, dropoff).foreach(s => 
-        table(s.id) = table(s.id) - 1
+        table(s.id) = table(s.id) - (t.seats + seats) 
       )
     })
     table
@@ -344,7 +346,7 @@ object Trip extends CompanionTable[Trip] {
 
   //get the vehicle's occupancy for the given segment 
   def getVehicleAvailability(vehicleId: Long, trip: Trip, 
-    pickup: Stop, dropoff: Stop) =  {
+    pickup: Stop, dropoff: Stop, seats: Int) =  {
 
     val routeStops = Route.getStops(pickup.routeId)
 
@@ -358,7 +360,7 @@ object Trip extends CompanionTable[Trip] {
 
     //build out the occupancy table
     val occupancy = vehicle.maximumOccupancy
-    val occupancyTable = buildOccupancyTable(routeStops, trips, occupancy)
+    val occupancyTable = buildOccupancyTable(routeStops, trips, occupancy, seats)
     occupancyTable
   }
                          
@@ -403,7 +405,7 @@ object Trip extends CompanionTable[Trip] {
       }
 
       val availabilityTable = vehicles.map(v => 
-        v.driverId -> getVehicleAvailability(v.id, trip, pickup, dropoff)
+        v.driverId -> getVehicleAvailability(v.id, trip, pickup, dropoff, trip.seats)
       ).toMap
 
       val tripStopIds = List(pickup.id) ++ getInBetweenStops(routeStops, pickup, dropoff).map(_.id) ++ List(dropoff.id)
@@ -492,6 +494,7 @@ object Trip extends CompanionTable[Trip] {
         trip.isProcessing = false
         Trips.upsert(trip)
         PubnubHelper.send(trip.getHash(), trip.asMap)
+        Notification.send(trip.userId, "Your trip is booked")
       }
     }
   }

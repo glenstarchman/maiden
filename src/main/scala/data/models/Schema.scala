@@ -228,6 +228,7 @@ object MaidenSchema extends Schema with  PrimitiveTypeMode with Log {
   var Stripes = table[Stripe]
   var Settings = table[Setting]
   var Notifications = table[Notification]
+  var Schedules = table[Schedule]
 
   /* for lookup */
   val lookup = Map(
@@ -246,7 +247,8 @@ object MaidenSchema extends Schema with  PrimitiveTypeMode with Log {
     "Stop" -> Stops,
     "Stripe" -> Stripes,
     "Setting" -> Settings,
-    "Notification" -> Notifications
+    "Notification" -> Notifications,
+    "Schedule" -> Schedules
   )
 
 }

@@ -37,6 +37,8 @@ object FileReader {
     ).toMap
   }
 
+  def read(fileName: String) = Source.fromFile(fileName)(Codec.UTF8).mkString
+
   def readAllCompressed(directory: String, keyFunc: (String) => String) = {
     val dir = new File(directory)
     val files = filesAt(dir)

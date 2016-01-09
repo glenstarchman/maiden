@@ -20,13 +20,15 @@ import org.squeryl._
 import org.json4s._
 import org.json4s.native.Serialization
 import org.json4s.native.Serialization._
+import org.json4s.JsonDSL._
+import org.json4s.jackson.JsonMethods._
 import java.util.Date
 import java.sql.Timestamp
 import org.squeryl.PrimitiveTypeMode
 import com.maiden.common.MaidenCache._
 import com.maiden.data.ConnectionPool
 import com.maiden.common.helpers.Text._
-import com.maiden.common.helpers.FileWriter
+import com.maiden.common.helpers.{FileReader, FileWriter}
 import com.maiden.common.Log
 
 object SquerylEntrypoint extends PrimitiveTypeMode 
@@ -154,8 +156,9 @@ object MaidenSchema extends Schema with  PrimitiveTypeMode with Log {
   }
 
   def tablesToJson() = {
-    getTables.map(t => s""""${t.name}" : ${tableToJson(t.name)}""")
+    var base = getTables.map(t => s""""${t.name}" : ${tableToJson(t.name)}""")
     .mkString(",\n")
+    s"{\n${base}\n}"
   }
 
   def tableToJson(table: String) = {
@@ -164,10 +167,14 @@ object MaidenSchema extends Schema with  PrimitiveTypeMode with Log {
       var sql = s"select to_json(x) from ${table} x"
       rawQuery(sql, (rs) => {
         while(rs.next()) {
-          r += s"${rs.getString(1)}\n"
+          r += s"${rs.getString(1)},\n"
         }
         r
       })
+      r = r.trim
+      if (r.endsWith(",")) {
+        r = r.dropRight(1)
+      }
       s"${r}\n]"
     } catch {
       case e: Exception => "[]"
@@ -177,6 +184,15 @@ object MaidenSchema extends Schema with  PrimitiveTypeMode with Log {
   def dumpTableJson(fileName: String) = 
     FileWriter.write(tablesToJson, fileName)
 
+  def restoreFromJson(fileName: String) = {
+    val jsonStr = FileReader.read(fileName)
+    val json = parse(jsonStr)
+    println(json)
+
+
+
+
+  }
 
   def rawQuery[T](query: String, handler: => (java.sql.ResultSet) => T) = {
     try {

@@ -53,7 +53,8 @@ case class Stop(var id: Long = 0,
       //these need to be calculated
       "nextArrival" -> new DateTime().plusMinutes(12).toString,
       "arrivals" -> List("11:15", "11:30", "12:00", "12:30"),
-      "schedule" -> Schedule.getForStop(id, routeId)
+      "schedule" -> Schedule.getForStop(id, routeId),
+      "todaysSchedule" -> Schedule.getTodaysSchedule(id, routeId)
     )
   }
 
@@ -137,7 +138,8 @@ object Stop extends CompanionTable[Stop] {
 
       "nextArrival" -> new DateTime().plusMinutes(12).toString,
       "arrivals" -> List("11:15", "11:30", "12:00", "12:30"),
-      "schedule" -> Schedule.getForStop(r("id").toString.toLong, r("routeId").toString.toLong)
+      "schedule" -> Schedule.getForStop(r("id").toString.toLong, r("routeId").toString.toLong),
+      "todaysSchedule" -> Schedule.getTodaysSchedule(r("id").toString.toLong, r("routeId").toString.toLong)
     )).toList
   }
 

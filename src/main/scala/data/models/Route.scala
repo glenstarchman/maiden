@@ -34,6 +34,12 @@ case class Route(override var id: Long=0,
 
 object Route extends CompanionTable[Route] {
 
+  def getFirstStop(routeId: Long) = fetchOne {
+    from(Stops)(s =>
+    where(s.routeId === routeId and s.stopOrder === 1)
+    select(s))
+  }
+
   def getStops(routeId: Long) = fetch {
     from(Stops)(s => 
     where(s.routeId === routeId)

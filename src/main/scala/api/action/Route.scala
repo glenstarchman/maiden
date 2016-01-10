@@ -71,6 +71,25 @@ class RouteStopInfo extends RouteApi {
 }
 
 @First
+@POST("api/route/:id/stop/first")
+@GET("api/route/:id/stop/first")
+@Swagger(
+  Swagger.OperationId("get_first_stop"),
+  Swagger.Summary("retrieves the first stop on a route")
+)
+class RouteFirstStop extends RouteApi {
+  def execute() {
+    futureExecute(() => {
+      val stop = Route.getFirstStop(param[Long]("id"))
+      stop match {
+        case Some(s) => (R.OK, s.asMap)
+        case _ => throw(new Exception("no such stop"))
+      }
+    })
+  }
+}
+
+@First
 @POST("api/route/active")
 @GET("api/route/active")
 @Swagger(

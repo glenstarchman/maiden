@@ -391,19 +391,6 @@ object Trip extends CompanionTable[Trip] {
   }
 
   def assignVehicle(trip: Trip) = {
-    Trip.setProcessing(trip.id, true)
-    trip.isProcessing = true //avoid race condition
-    
-    if (trip.reservationType == ReservationType.OnDemand.id) {
-
-    } else {
-
-    }
-  }
-
-
-
-  def assignVehicle(trip: Trip) = {
     for {
       //trip meta information
       tm <- Option(new TripMeta(trip))

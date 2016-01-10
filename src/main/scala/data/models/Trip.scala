@@ -17,83 +17,89 @@ import com.maiden.common.{Geo, Osrm, PubnubHelper, PushNotification}
 import com.maiden.common.helpers.Hasher
 
 case class Trip(override var id: Long=0, 
-                var userId: Long = 0,
-                var driverId: Long = 0,
-                var vehicleId: Long = 0,
-                var routeId: Long = 0,
-                var fareId: Long = 0,
-                var reservationType: Int = ReservationType.OnDemand.id,
-                var rideState: Int = RideStateType.Initial.id,
-                var paymentState: Int = PaymentStateType.Pending.id,
-                var discountType: Int = DiscountType.NoDiscount.id,
-                var isTransfer: Boolean = false,
-                var pickupStop: Long = 0,
-                var dropoffStop: Long = 0,
-                var reservationTime: Timestamp = new Timestamp(System.currentTimeMillis),
-                var eta: Timestamp = null,
-                var pickupTime: Timestamp = null,
-                var dropoffTime: Timestamp = null,
-                var cancellationTime: Timestamp = null,
-                var isProcessing: Boolean = false,
-                var geom: String = null,
-                var seats: Int = 1,
-                var createdAt: Timestamp=new Timestamp(System.currentTimeMillis), 
-                var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis)) 
+            var userId: Long = 0,
+            var driverId: Long = 0,
+            var vehicleId: Long = 0,
+            var routeId: Long = 0,
+            var fareId: Long = 0,
+            var reservationType: Int = ReservationType.OnDemand.id,
+            var rideState: Int = RideStateType.Initial.id,
+            var paymentState: Int = PaymentStateType.Pending.id,
+            var discountType: Int = DiscountType.NoDiscount.id,
+            var isTransfer: Boolean = false,
+            var pickupStop: Long = 0,
+            var dropoffStop: Long = 0,
+            var reservationTime: Timestamp = new Timestamp(System.currentTimeMillis),
+            var eta: Timestamp = null,
+            var pickupTime: Timestamp = null,
+            var dropoffTime: Timestamp = null,
+            var cancellationTime: Timestamp = null,
+            var isProcessing: Boolean = false,
+            var geom: String = null,
+            var seats: Int = 1,
+            var scheduleId: Long = 0,
+            var createdAt: Timestamp=new Timestamp(System.currentTimeMillis), 
+            var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis)
+  ) 
   extends BaseMaidenTableWithTimestamps {
 
-    def getHash() = {
-      val h = s"trip-${id}"
-      h
-      //Hasher.md5(h)
-    }
+  def getHash() = {
+    val h = s"trip-${id}"
+    h
+    //Hasher.md5(h)
+  }
 
-    override def extraMap() = Map(
-      "hash" -> getHash(),
-      "vehicle" -> {
-        Vehicle.get(vehicleId) match {
-          case Some(v) => v.asMap
-          case _ => Map.empty
-        }
-      },
-      "driver" -> {
-        User.get(driverId) match {
-          case Some(d) => d.asMap
-          case _ => Map.empty
-        }
-      },
-      "pickup" -> {
-        Stop.get(pickupStop) match {
-          case Some(p) => p.asMap
-          case _ => Map.empty
-        }
-      },
-      "dropoff" -> {
-        Stop.get(dropoffStop) match {
-          case Some(d) => d.asMap
-          case _ => Map.empty
-        }
+  override def extraMap() = Map(
+    "hash" -> getHash(),
+    "vehicle" -> {
+      Vehicle.get(vehicleId) match {
+        case Some(v) => v.asMap
+        case _ => Map.empty
       }
-    )
+    },
+    "driver" -> {
+      User.get(driverId) match {
+        case Some(d) => d.asMap
+        case _ => Map.empty
+      }
+    },
+    "pickup" -> {
+      Stop.get(pickupStop) match {
+        case Some(p) => p.asMap
+        case _ => Map.empty
+      }
+    },
+    "dropoff" -> {
+      Stop.get(dropoffStop) match {
+        case Some(d) => d.asMap
+        case _ => Map.empty
+      }
+    }
+  )
 
-    def miniUpdateMap() = Map(
-      "id" -> id,
-      "rideState" -> rideState,
-      "paymentState" -> paymentState,
-      "isTransfer" -> isTransfer,
-      "pickupStop" -> pickupStop,
-      "dropoffStop" -> dropoffStop,
-      "isTransfer" -> isTransfer,
-      "vehicle" -> {
-        Vehicle.get(vehicleId) match {
-          case Some(v) => v.asMap
-          case _ => Map.empty
-        }
-      },
-      "eta" -> getDriverEta(),
-      "hash" -> getHash()
-    ) 
+  def miniUpdateMap() = Map(
+    "id" -> id,
+    "rideState" -> rideState,
+    "paymentState" -> paymentState,
+    "isTransfer" -> isTransfer,
+    "pickupStop" -> pickupStop,
+    "dropoffStop" -> dropoffStop,
+    "isTransfer" -> isTransfer,
+    "vehicle" -> {
+      Vehicle.get(vehicleId) match {
+        case Some(v) => v.asMap
+        case _ => Map.empty
+      }
+    },
+    "eta" -> getDriverEta(),
+    "hash" -> getHash(),
+    "schedule" -> Schedule.get(scheduleId)
+  ) 
 
-    def getDriverEta() = {
+  def getDriverEta() = {
+
+    if (scheduleId == null) {
+      //an on-demand trip
       val routeStops = Route.getStops(routeId)
       val vLoc = GpsLocation.getCurrentForUser(driverId).get
       val closest = Stop.getClosestStop(vLoc.latitude, vLoc.longitude)
@@ -107,7 +113,26 @@ case class Trip(override var id: Long=0,
                                     betweenLocs) 
 
       new DateTime().plusSeconds(o("eta").toString.toInt).toString
+    } else {
+      //a scheduled trip
+      val now = new DateTime()
+      val schedule = Schedule.get(scheduleId).get
+      val t = schedule.stopTime.split(':')
+      if (now.getDayOfWeek == schedule.dayOfWeek) {
+        //same day
+        now
+          .withHourOfDay(t(0).toInt)
+          .withMinuteOfHour(t(1).toInt)
+          .toString
+      } else {
+        now
+          .plusDays(1)
+          .withHourOfDay(t(0).toInt)
+          .withMinuteOfHour(t(1).toInt)
+          .toString
+      }
     }
+  }
 }
 
 object Trip extends CompanionTable[Trip] {
@@ -161,7 +186,7 @@ object Trip extends CompanionTable[Trip] {
   def create(userId: Long, routeId: Long, 
              reservationType: Int, 
              pickupStop: Long, dropoffStop: Long,
-             seats: Int = 1) = {
+             seats: Int = 1, scheduleId: Long) = {
 
     getExisting(userId) match {
       case Some(t) => throw(new AlreadyHaveTripException()) 
@@ -173,7 +198,8 @@ object Trip extends CompanionTable[Trip] {
           pickupStop = pickupStop,
           dropoffStop = dropoffStop,
           rideState = RideStateType.Initial.id,
-          seats = seats
+          seats = seats,
+          scheduleId = scheduleId
         )
 
         withTransaction {
@@ -364,30 +390,6 @@ object Trip extends CompanionTable[Trip] {
     occupancyTable
   }
                          
-  /*
-  def assignVehicleForOnDemand2(trip: Trip) = {
-    Trip.setProcessing(trip.id, true)
-    trip.isProcessing = true
-
-    val routeStops = Route.getStops(trip.routeId)
-    val vehicles = Vehicle.getForRouteRaw(trip.routeId) 
-    val (pickup, dropoff) = getStops(trip.pickupStop, trip.dropoffStop) match {
-      case Some((p,d)) => (p,d)
-      case _ => throw(new Exception("no stops"))
-    }
-
-    val tripStopIds = List(pickup.id) ++ 
-               getInBetweenStops(routeStops, pickup, dropoff).map(_.id) ++ 
-               List(dropoff.id)
-
-    val availableVehicles = for {
-      vehicle <- vehicles
-      availabilityTable = getVehicleAvailability(vehicle.id, trip, pickup, dropoff)
-      availableVehicle = if (availabilityTable.filter{ case(k,v) => v > 0 }.size == tripStopIds.size) Option(vehicle) else None
-
-    } yield(availableVehicle)
-
-  */
   //search for a vehicle that has occupancy for this trip
   //this is only called from DispatchActor
   //and selects the closest driver
@@ -463,12 +465,8 @@ object Trip extends CompanionTable[Trip] {
             (geo("latitude").toFloat, geo("longitude").toFloat)
         }).toList
 
-        val o = Osrm.getRouteAndEta((vLoc.latitude, vLoc.longitude), 
-                                    driverBetweenLocs) 
         //set our ETA on the trip
-        trip.eta = new Timestamp(
-          new DateTime().plusSeconds(o("eta").toString.toInt).getMillis
-        )
+        trip.eta = new Timestamp(new DateTime(trip.getDriverEta()).getMillis)
 
         val tripBetweenLocs = (getInBetweenStops(routeStops, pickup, dropoff) ++ List(dropoff)).map(b => {
           val geo = Geo.latLngFromWKB(b.geom)
@@ -479,14 +477,6 @@ object Trip extends CompanionTable[Trip] {
 
         val o2 = Osrm.getRouteAndEta((pickupLoc("latitude").toFloat, pickupLoc("longitude").toFloat), tripBetweenLocs)
         val tripGeom = o2("geometry").asInstanceOf[List[List[Float]]]
-
-        /*val tripGeom = o("geometry").asInstanceOf[List[List[Float]]].map(c =>
-            List(c(0).toString.toFloat, c(1).toString.toFloat)
-        )
-        */
-        //val tripMeta  = Route.getRouteGeometry(trip.routeId, pickup, dropoff)
-
-        //val tripGeom:List[List[Float]] = o2("geometry").asInstanceOf[List[List[Double]]].map(c => List(c(0).toString.toFloat, c(1).toString.toFloat))
         trip.geom = Geo.latLngListToWKB(tripGeom)
       }
 
@@ -494,7 +484,8 @@ object Trip extends CompanionTable[Trip] {
         trip.isProcessing = false
         Trips.upsert(trip)
         PubnubHelper.send(trip.getHash(), trip.asMap)
-        Notification.send(trip.userId, "Your trip is booked")
+        val message = s"${pickup.name} to ${dropoff.name}"
+        Notification.send(trip.userId, "Your trip is booked", message )
       }
     }
   }

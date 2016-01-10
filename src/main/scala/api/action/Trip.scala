@@ -86,7 +86,8 @@ class TripRouteInfo extends AuthorizedTripApi {
   Swagger.IntQuery("reservationType", "Reservation type"),
   Swagger.IntQuery("pickupStop", "The id of the pickup"),
   Swagger.IntQuery("dropoffStop", "The id of the dropoff"),
-  Swagger.OptIntQuery("pickupTime", "Not used yet")
+  Swagger.IntQuery("numberOfSeats",  "The number of seats for this trip"),
+  Swagger.IntQuery("scheduleId", "The stop's schedule id")
 )
 class BookTrip extends AuthorizedTripApi {
   def execute() {
@@ -98,7 +99,9 @@ class BookTrip extends AuthorizedTripApi {
                   param[Long]("routeId"),
                   param[Int]("reservationType"),
                   param[Long]("pickupStop"),
-                  param[Long]("dropoffStop")
+                  param[Long]("dropoffStop"),
+                  param[Int]("numberOfSeats"),
+                  param[Long]("scheduleId")
        ) match {
          case Some(trip) => (R.OK, trip.asMap)
          case _ => throw(new CreateOrUpdateFailedException())

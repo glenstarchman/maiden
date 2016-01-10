@@ -13,19 +13,19 @@ object PushNotification {
 
   val baseUrl = "https://push.ionic.io/api/v1/push"
 
-  def send(tokens: List[String], message: String, isProduction: Boolean = false) = {
+  def send(tokens: List[String], title: String, message: String, isProduction: Boolean = false) = {
     val payload = Serialization.write(Map(
       "tokens" -> tokens,
       "production" -> isProduction,
       "notification" -> Map(
         "alert" -> message,
         "android" -> Map(
-          "title" -> "Maiden",
+          "title" -> title,
           "icon" -> "icon.png"
         ),
         "ios" -> Map(
           //need to fill this in
-          "title" -> "Maiden",
+          "title" -> title, 
           "icon" -> "icon.png",
           "badge" -> 1
         )

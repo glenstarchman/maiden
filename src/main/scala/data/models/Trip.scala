@@ -98,7 +98,7 @@ case class Trip(override var id: Long=0,
 
   def getDriverEta() = {
 
-    if (scheduleId == null) {
+    if (scheduleId == 0l) {
       //an on-demand trip
       val routeStops = Route.getStops(routeId)
       val vLoc = GpsLocation.getCurrentForUser(driverId).get
@@ -389,110 +389,48 @@ object Trip extends CompanionTable[Trip] {
     val occupancyTable = buildOccupancyTable(routeStops, trips, occupancy, seats)
     occupancyTable
   }
-                         
-  //search for a vehicle that has occupancy for this trip
-  //this is only called from DispatchActor
-  //and selects the closest driver
-  def assignVehicleForOnDemand(trip: Trip) = {
+
+  def assignVehicle(trip: Trip) = {
     Trip.setProcessing(trip.id, true)
-    trip.isProcessing = true
-    val routeStops = Route.getStops(trip.routeId)
-    if (trip.isProcessing) {
-      val vehicles = Vehicle.getForRouteRaw(trip.routeId)
-      val (pickup, dropoff) = 
-        getStops(trip.pickupStop, trip.dropoffStop) match {
+    trip.isProcessing = true //avoid race condition
+    
+    if (trip.reservationType == ReservationType.OnDemand.id) {
 
-        case Some((p, d)) => (p,d)
-        case _ => throw(new Exception("no stops"))
-      }
+    } else {
 
-      val availabilityTable = vehicles.map(v => 
-        v.driverId -> getVehicleAvailability(v.id, trip, pickup, dropoff, trip.seats)
-      ).toMap
-
-      val tripStopIds = List(pickup.id) ++ getInBetweenStops(routeStops, pickup, dropoff).map(_.id) ++ List(dropoff.id)
-
-      val availableVehicles = availabilityTable.filter { 
-        case(driver, table) if table.size > 0 => {
-            tripStopIds.filter(ts => table(ts) > 0).size == tripStopIds.size 
-          } 
-          case _ =>  false 
-      }.map { 
-        case(driverId, a)  => 
-          vehicles.filter(_.driverId == driverId) } match {
-            case x:List[Vehicle] if x.size > 0 => x.head 
-            case _ => List[Vehicle]() 
-          }
-        
-       //println(availableVehicles)
-      //short-circuit if only one vehicle 
-      val bookedTrip = availableVehicles.size match {
-        case 0 => trip.rideState = RideStateType.NoAvailableVehicles.id 
-        case 1 => {
-          //assign this vehicle/driver to the trip
-          val v = availableVehicles.head
-          trip.driverId = v.driverId
-          trip.vehicleId = v.id
-          trip.rideState = RideStateType.VehicleAccepted.id
-        }
-        case _ => {
-          //need to sort by distance
-          val vehicleLocs = availableVehicles.map(v => {
-              val loc = GpsLocation.getCurrentForUser(v.driverId) match {
-                case Some(gps) => (gps.latitude, gps.longitude)
-                case _ => (0f, 0f)
-              }
-              v.id -> loc 
-          }).toMap
-
-          val p = Geo.latLngFromWKB(pickup.geom)
-          val stopLoc = (p("latitude").toString.toFloat, p("longitude").toString.toFloat)
-          //get the distance table 
-          val distanceTable = Osrm.getDistanceTable(stopLoc, vehicleLocs.values.toList)
-        }
-      }
-
-      //figure out the ETA if successfully booked
-      if (trip.rideState == RideStateType.VehicleAccepted.id) {
-        val vLoc = GpsLocation.getCurrentForUser(trip.driverId).get
-        val closest = Stop.getClosestStop(vLoc.latitude, vLoc.longitude)
-        val closestStopLoc = (closest("longitude").toString.toFloat, closest("latitude").toString.toFloat)
-
-        val c = Stop.get(closest("id").toString.toLong).get
-        println(Geo.latLngFromWKB(c.geom))
-        val driverBetweenLocs = (List(c) ++ getInBetweenStops(routeStops, c, pickup) ++ List(pickup)).map(b => {
-          val geo = Geo.latLngFromWKB(b.geom)
-            (geo("latitude").toFloat, geo("longitude").toFloat)
-        }).toList
-
-        //set our ETA on the trip
-        trip.eta = new Timestamp(new DateTime(trip.getDriverEta()).getMillis)
-
-        val tripBetweenLocs = (getInBetweenStops(routeStops, pickup, dropoff) ++ List(dropoff)).map(b => {
-          val geo = Geo.latLngFromWKB(b.geom)
-            (geo("latitude").toFloat, geo("longitude").toFloat)
-        }).toList
-
-        val pickupLoc = Geo.latLngFromWKB(pickup.geom) 
-
-        val o2 = Osrm.getRouteAndEta((pickupLoc("latitude").toFloat, pickupLoc("longitude").toFloat), tripBetweenLocs)
-        val tripGeom = o2("geometry").asInstanceOf[List[List[Float]]]
-        trip.geom = Geo.latLngListToWKB(tripGeom)
-      }
-
-      withTransaction {
-        trip.isProcessing = false
-        Trips.upsert(trip)
-        PubnubHelper.send(trip.getHash(), trip.asMap)
-        val message = s"${pickup.name} to ${dropoff.name}"
-        Notification.send(trip.userId, "Your trip is booked", message )
-      }
     }
   }
-  
-  /* TODO: we may just call a Crown API here for now... */
-  def assignVehicleForReservation(trip: Trip) = {
 
+
+
+  def assignVehicle(trip: Trip) = {
+    for {
+      //trip meta information
+      tm <- Option(new TripMeta(trip))
+
+      //the availability of all vehicles
+      availabilityTable <- Option(tm.vehicles.map(v => 
+            v.driverId -> getVehicleAvailability(v.id, trip, tm.pickup, 
+                            tm.dropoff, 
+                            trip.seats)).toMap)
+
+      availableVehicles <- Option(availabilityTable.filter { 
+                            case(driver, table) if table.size > 0 => {
+                              tm.tripStopIds.filter(ts => 
+                                  table(ts) > 0).size ==tm.tripStopIds.size 
+                            } 
+                            case _ => false 
+                          }.map { 
+                            case(driverId, a)  => 
+                                tm.vehicles.filter(_.driverId == driverId)
+                            case _ => List.empty 
+                          }.toList.flatMap(x=>x)
+                        ) 
+       matchedTrip <- tm.getBestVehicle(availableVehicles)
+       bookableTrip <- tm.getInitialTripEtaAndRoute
+       bookedTrip <- tm.saveTrip
+                         
+    } yield(bookedTrip)
   }
 
   def getTripRoute(trip: Trip) = {
@@ -515,5 +453,91 @@ object Trip extends CompanionTable[Trip] {
         }
       }
     )
+  }
+
+  //a holder for info common amonfst all trips
+  private class TripMeta(trip: Trip) {
+    //all stops on the route
+    val routeStops = Route.getStops(trip.routeId)
+    //vehicles on the route
+    val vehicles = Vehicle.getForRouteRaw(trip.routeId)
+    //pickup and dropoff location objects
+    val (pickup, dropoff) = 
+      getStops(trip.pickupStop, trip.dropoffStop) match {
+      case Some((p, d)) => (p,d)
+      case _ => throw(new Exception("no stops"))
+    }
+    val tripStopIds = List(pickup.id) ++ getInBetweenStops(routeStops, pickup, dropoff).map(_.id) ++ List(dropoff.id)
+
+
+    def getBestVehicle(availableVehicles: List[Vehicle]) = {
+      availableVehicles.size match {
+        case 0 => {
+          trip.rideState = RideStateType.NoAvailableVehicles.id 
+        }
+        case 1 => {
+          //assign this vehicle/driver to the trip
+          val v = availableVehicles.head
+          trip.driverId = v.driverId
+          trip.vehicleId = v.id
+          trip.rideState = RideStateType.VehicleAccepted.id
+        }
+        case _ => {
+          //TODO: THIS IS INCOMPLETE! need to sort by distance
+          val vehicleLocs = availableVehicles.map(v => {
+              val loc = GpsLocation.getCurrentForUser(v.driverId) match {
+                case Some(gps) => (gps.latitude, gps.longitude)
+                case _ => (0f, 0f)
+              }
+              v.id -> loc 
+          }).toMap
+
+          val p = Geo.latLngFromWKB(pickup.geom)
+          val stopLoc = (p("latitude").toString.toFloat, p("longitude").toString.toFloat)
+        }
+      }
+      Option(trip)
+    }
+
+    def getInitialTripEtaAndRoute() = {
+      //figure out the ETA if successfully booked
+      if (trip.rideState == RideStateType.VehicleAccepted.id) {
+        val vLoc = GpsLocation.getCurrentForUser(trip.driverId).get
+        val closest = Stop.getClosestStop(vLoc.latitude, vLoc.longitude)
+        val closestStopLoc = (closest("longitude").toString.toFloat, closest("latitude").toString.toFloat)
+
+        val c = Stop.get(closest("id").toString.toLong).get
+        val driverBetweenLocs = (List(c) ++ getInBetweenStops(routeStops, c, pickup) ++ List(pickup)).map(b => {
+          val geo = Geo.latLngFromWKB(b.geom)
+            (geo("latitude").toFloat, geo("longitude").toFloat)
+        }).toList
+
+        //set our ETA on the trip
+        trip.eta = new Timestamp(new DateTime(trip.getDriverEta()).getMillis)
+
+        val tripBetweenLocs = (getInBetweenStops(routeStops, pickup, dropoff) ++ List(dropoff)).map(b => {
+          val geo = Geo.latLngFromWKB(b.geom)
+            (geo("latitude").toFloat, geo("longitude").toFloat)
+        }).toList
+
+        val pickupLoc = Geo.latLngFromWKB(pickup.geom) 
+
+        val o2 = Osrm.getRouteAndEta((pickupLoc("latitude").toFloat, pickupLoc("longitude").toFloat), tripBetweenLocs)
+        val tripGeom = o2("geometry").asInstanceOf[List[List[Float]]]
+        trip.geom = Geo.latLngListToWKB(tripGeom)
+        Option(trip)
+      } else {
+        None
+      }
+    }
+
+    def saveTrip() = withTransaction {
+      trip.isProcessing = false
+      Trips.upsert(trip)
+      PubnubHelper.send(trip.getHash(), trip.asMap)
+      val message = s"${pickup.name} to ${dropoff.name}"
+      Notification.send(trip.userId, "Your trip is booked", message )
+      Option(trip)
+    }
   }
 }

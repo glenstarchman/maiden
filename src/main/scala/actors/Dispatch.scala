@@ -41,13 +41,8 @@ object DispatchActor extends Log {
             if (!processingStates("rideState")) {
               toggleState("rideState") 
               Trip.getPending.par.foreach(trip => {
-                //Trip.setProcessing(trip.id, true)
                 Trip.updateState(trip.id, RideStateType.FindingVehicle.id)
-                if (trip.reservationType == ReservationType.OnDemand.id) {
-                  Trip.assignVehicleForOnDemand(trip)
-                } else {
-                  Trip.assignVehicleForReservation(trip)
-                }
+                Trip.assignVehicle(trip)
               })
 
               Trip.getVehicleOverdue.par.foreach(trip => {

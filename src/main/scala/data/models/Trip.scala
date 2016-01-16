@@ -146,15 +146,13 @@ object Trip extends CompanionTable[Trip] {
   )
 
 
-  def getForDriver(driverId: Long) = {
-    fetch {
-      from(Trips)(t =>
-      where (
-        (t.driverId === driverId) and 
-        (t.rideState in haveRideStates)
-      )
-      select(t))
-    }
+  def getForDriver(driverId: Long) = fetch {
+    from(Trips)(t =>
+    where (
+      (t.driverId === driverId) and 
+      (t.rideState in haveRideStates)
+    )
+    select(t))
   }
   
   def getPendingForDriver(driverId: Long) = {
@@ -442,7 +440,7 @@ object Trip extends CompanionTable[Trip] {
     )
   }
 
-  //a holder for info common amonfst all trips
+  //a holder for info common amongst all trips
   private class TripMeta(trip: Trip) {
     //all stops on the route
     val routeStops = Route.getStops(trip.routeId)

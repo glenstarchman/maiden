@@ -47,7 +47,7 @@ class StripeHelper {
         val charge = Charge.create(chargeMap, options) 
         println(charge)
     } catch {
-      case e => e.printStackTrace
+      case e: Exception => e.printStackTrace
     }
   }
 }

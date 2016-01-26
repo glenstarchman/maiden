@@ -30,6 +30,7 @@ case class Stop(var id: Long = 0,
           var markerType: String = "glass",
           var markerColor: String = "red",
           var showMarker: Boolean = true,
+          var closeBy: String = "",
           var createdAt: Timestamp=new Timestamp(System.currentTimeMillis), 
           var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis)) 
 
@@ -95,6 +96,7 @@ object Stop extends CompanionTable[Stop] {
         select id, route_id, stop_order, name, address, description, 
          details, thumbnail, 
          active, marker_type, marker_color, show_marker,
+         close_by, 
          created_at, updated_at,
          ST_Y(geom) as latitude,
          ST_X(geom) as longitude,

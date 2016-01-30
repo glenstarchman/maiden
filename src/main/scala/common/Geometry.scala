@@ -91,8 +91,10 @@ object Geo {
     val route = gm.createLineString(points)
     val w = new WKBWriter()
     WKBWriter.bytesToHex(w.write(route))
-
   }
+
+
+  def latLngToWKB(coords: List[Float]) = latLngListToWKB(List(coords))
 
   def makePoint(lat: Double, lng: Double) = gm.createPoint(new Coordinate(lat,lng))
 

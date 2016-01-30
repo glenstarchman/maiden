@@ -399,7 +399,7 @@ object Trip extends CompanionTable[Trip] {
                             tm.dropoff, 
                             trip.seats)).toMap)
 
-      availableVehicles <- Option(availabilityTable.filter { 
+      availableVehicles <- availabilityTable.filter { 
                             case(driver, table) if table.size > 0 => {
                               tm.tripStopIds.filter(ts => 
                                   table(ts) > 0).size ==tm.tripStopIds.size 
@@ -409,8 +409,16 @@ object Trip extends CompanionTable[Trip] {
                             case(driverId, a)  => 
                                 tm.vehicles.filter(_.driverId == driverId)
                             case _ => List.empty 
-                          }.toList.flatMap(x=>x)
-                        ) 
+                          }.toList.flatMap(x=>x) match {
+                            case x:List[_] if x.size > 0 => Option(x.asInstanceOf[List[Vehicle]])
+                            case _ => {
+                              trip.rideState = RideStateType.NoAvailableVehicles.id
+                              withTransaction {
+                                Trips.upsert(trip)
+                              }
+                              None
+                            }
+                          }
        matchedTrip <- tm.getBestVehicle(availableVehicles)
        bookableTrip <- tm.getInitialTripEtaAndRoute
        bookedTrip <- tm.saveTrip
@@ -456,6 +464,7 @@ object Trip extends CompanionTable[Trip] {
 
 
     def getBestVehicle(availableVehicles: List[Vehicle]) = {
+      println(availableVehicles)
       availableVehicles.size match {
         case 0 => {
           trip.rideState = RideStateType.NoAvailableVehicles.id 
@@ -485,6 +494,7 @@ object Trip extends CompanionTable[Trip] {
     }
 
     def getInitialTripEtaAndRoute() = {
+      println("getting ETA")
       //figure out the ETA if successfully booked
       if (trip.rideState == RideStateType.VehicleAccepted.id) {
         val vLoc = GpsLocation.getCurrentForUser(trip.driverId).get
@@ -507,7 +517,9 @@ object Trip extends CompanionTable[Trip] {
 
         val pickupLoc = Geo.latLngFromWKB(pickup.geom) 
 
+        println("trying to get ETA")
         val o2 = Osrm.getRouteAndEta((pickupLoc("latitude").toFloat, pickupLoc("longitude").toFloat), tripBetweenLocs)
+        println("here")
         val tripGeom = o2("geometry").asInstanceOf[List[List[Float]]]
         trip.geom = Geo.latLngListToWKB(tripGeom)
         Option(trip)

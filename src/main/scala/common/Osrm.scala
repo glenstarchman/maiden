@@ -22,6 +22,7 @@ object Osrm {
      val url = s"${endpoint}?${locParams}&compression=false"
      val http = new HttpClient(url)
      val p = http.fetchAsMap()
+     println(url)
      val geom = p("route_geometry").asInstanceOf[List[List[(Float, Float)]]]
      geom ++ List(geom(0))
   }

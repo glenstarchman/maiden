@@ -53,15 +53,89 @@ case class Stop(var id: Long = 0,
                              1000, 1000),
       //these need to be calculated
       "nextArrival" -> new DateTime().plusMinutes(12).toString,
-      "arrivals" -> List("11:15", "11:30", "12:00", "12:30"),
+      "arrivals" -> List("11:15", "11:30", "12:00", "12:30")/*,
       "schedule" -> Schedule.getForStop(id, routeId),
       "todaysSchedule" -> Schedule.getTodaysSchedule(id, routeId)
+      */
     )
   }
 
 }
 
 object Stop extends CompanionTable[Stop] {
+
+  private[this] def rawGetStops(routeId: Long) = withTransaction {
+    from(Stops)(s =>
+    where(s.routeId === routeId)
+    select(s)
+    orderBy(s.stopOrder))
+  }
+
+  def create(routeId: Long, stopOrder: Int = 0, 
+             name: String, address: String, details: String,
+             description: String, thumbnail: String, geom: List[Float],  
+             active: Boolean = true, bearing: Float = 0f,
+             markerType: String = "glass", showMarker: Boolean = true,
+             closeBy: String = "") = {
+
+    val stops = rawGetStops(routeId) 
+
+    val realStopOrder = if (stopOrder == 0) {
+      stops.size + 1
+    } else {
+      stopOrder
+    }
+
+    val geometry = Geo.latLngToWKB(geom)
+
+    val newStop = Stop(routeId = routeId, stopOrder = realStopOrder,
+                       name = name, address = address, details = details,
+                       description = description, thumbnail = thumbnail,
+                       geom = geometry, active = active, bearing = bearing,
+                       markerType = markerType, showMarker = showMarker,
+                       closeBy = closeBy)
+
+    if (stopOrder == 0) {
+      //just a normal insert... eg, push this stop
+      withTransaction {
+        Stops.upsert(newStop)
+      }
+    } else {
+      //push all the other stops up by 1
+      val _stops = stops
+                   .filter(s => s.stopOrder >= realStopOrder)
+                   .map(s => { s.stopOrder = s.stopOrder + 1; s }) 
+                   .foreach(s => withTransaction{ Stops.upsert(s) })
+
+      withTransaction {
+        Stops.upsert(newStop)
+      }
+    }
+
+    //regenerate our bearings
+    generateBearings(routeId)
+
+    newStop
+  }
+
+
+  //move a stop to a different stop order 
+  def moveStop(routeId: Long, stopId: Long, newStopOrder: Int) = {
+    val stops = rawGetStops(routeId)
+    val origStop = stops.filter(s => s.id == stopId).head
+
+    if (origStop.stopOrder < newStopOrder) {
+
+
+    } else {
+
+    }
+
+  }
+
+  def removeStop(routeId: Long, stopId: Long) = {
+
+  }
 
   def generateBearings(routeId: Long) = {
     val stops = fetch {
@@ -139,9 +213,11 @@ object Stop extends CompanionTable[Stop] {
                              1000, 1000),
 
       "nextArrival" -> new DateTime().plusMinutes(12).toString,
-      "arrivals" -> List("11:15", "11:30", "12:00", "12:30"),
+      "arrivals" -> List("11:15", "11:30", "12:00", "12:30")
+      /*
       "schedule" -> Schedule.getForStop(r("id").toString.toLong, r("routeId").toString.toLong),
       "todaysSchedule" -> Schedule.getTodaysSchedule(r("id").toString.toLong, r("routeId").toString.toLong)
+      */
     )).toList
   }
 

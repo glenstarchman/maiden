@@ -73,6 +73,12 @@ object Geo {
     Map("latitude" -> geom.y, "longitude" -> geom.x)
   }
 
+  def latLngPairFromWKB(wkb: String) = {
+    val wk = new WKBReader(gm)
+    val geom = wk.read(hex2Bytes(wkb)).getCoordinate
+    (geom.y.toFloat, geom.x.toFloat)
+  }
+
   def latLngListFromWKB(wkb: String) = {
     val wk = new WKBReader(gm)
     val geom = wk.read(hex2Bytes(wkb)).getCoordinates

@@ -412,10 +412,7 @@ object Trip extends CompanionTable[Trip] {
                           }.toList.flatMap(x=>x) match {
                             case x:List[_] if x.size > 0 => Option(x.asInstanceOf[List[Vehicle]])
                             case _ => {
-                              trip.rideState = RideStateType.NoAvailableVehicles.id
-                              withTransaction {
-                                Trips.upsert(trip)
-                              }
+                              Trip.updateState(trip.id, RideStateType.NoAvailableVehicles.id)
                               None
                             }
                           }

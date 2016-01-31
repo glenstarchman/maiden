@@ -65,14 +65,14 @@ object Osrm {
      }.mkString("&") 
      val url = s"${endpoint}?loc=${start._1},${start._2}&${locParams}&compression=false"
      val http = new HttpClient(url)
-     println(url)
+     //println(url)
      val p = http.fetchAsMap()
      val geometry = p("route_geometry")
      val summary = p("route_summary").asInstanceOf[Map[String, Any]]
      Map(
        "geometry" -> geometry,
        "distance" -> summary("total_distance"),
-       "eta" -> summary("total_time")
+       "eta" -> summary("total_time").toString.toInt * 2 //double what OSRM gives us
      )
   }
 

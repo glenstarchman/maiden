@@ -6,14 +6,16 @@ import org.joda.time._
 import MaidenSchema._
 import com.maiden.common.exceptions._
 import com.maiden.common.Enums._
+import com.maiden.common.{Geo, Osrm}
 
 case class Schedule(override var id: Long=0, 
-            var routeId: Long = 0,
-            var stopId: Long = 0,
-            var dayOfWeek: Int = 0,
-            var stopTime: String = "",
-            var createdAt: Timestamp=new Timestamp(System.currentTimeMillis), 
-            var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis) 
+                    var routeId: Long = 0,
+                    var stopId: Long = 0,
+                    var dayOfWeek: Int = 0,
+                    var stopTime: String = "",
+                    var masterScheduleId: String  = "",
+                    var createdAt: Timestamp=new Timestamp(System.currentTimeMillis),
+                    var updatedAt: Timestamp=new Timestamp(System.currentTimeMillis)
 ) extends BaseMaidenTableWithTimestamps {
 
 
@@ -21,58 +23,170 @@ case class Schedule(override var id: Long=0,
 
 object Schedule extends CompanionTable[Schedule] {
 
+  implicit def dbl2flt(d: java.lang.Double) = d.toFloat
+
   val MAX_STOP_TIME = 1440
-  //only return times in the future
-  def getTodaysSchedule(stopId: Long, routeId: Long) = {
-    val schedule = getForStop(stopId, routeId)
+
+  def generateSchedule(routeId: Long, days: List[Int], startHour: Int, endHour: Int, startMinute: Int = 0) = {
+
+    //wipe out the existing schedule for this route
+    /*withTransaction {
+      Schedules.deleteWhere(s => s.routeId === routeId)
+    }
+    */
+
+    val totalMinutes = (endHour - startHour) * 60
+    println("total operating minutes=" + totalMinutes)
+
+    val stops = fetch {
+      from(Stops)(s =>
+      where(s.routeId === routeId)
+      select(s)
+      orderBy(s.stopOrder))
+    }
+
+    days.foreach(day => {
+      var hour = startHour
+      //assume all routes start on the hour
+      //if (hour <= endHour + 20) {
+      var minute = startMinute
+      //do the first one
+      var tripCounter = 1
+
+      val initialStop = Schedule(routeId = routeId,
+                                 stopId= stops(0).id,
+                                 dayOfWeek = day,
+                                 masterScheduleId = s"${routeId}:${startMinute}:1",
+                                 stopTime = s"${"%02d".format(hour)}:${"%02d".format(minute)}")
+
+      withTransaction {
+        Schedules.upsert(initialStop)
+      }
+
+      while(minute <= totalMinutes) {
+        val masterScheduleId = s"${routeId}:${startMinute}:${tripCounter}"
+        stops.zipWithIndex.foreach {
+          case (stop, index) => {
+            val nextStop = if (index < stops.size - 1) {
+              stops(index + 1)
+            } else {
+              stops(0)
+            }
+            //get the eta between these stops
+            val inBetween = Trip.getInBetweenStops(stops, stop, nextStop) ++ List(nextStop)
+            val startCoords = Geo.latLngPairFromWKB(stop.geom)
+            //.map(x => x("latitude"), x("longitude"))
+            val otherCoords = inBetween.map(s => {
+              val coords = Geo.latLngFromWKB(s.geom)
+              (coords("latitude").toFloat, coords("longitude").toFloat)
+            })
+            val osrm = Osrm.getRouteAndEta(startCoords, otherCoords)
+            val baseEta = osrm("eta").toString.toInt
+            //handle busy times (eg, 4 - 6, 8 - 10)
+            /*val multiplier = if ((hour >= 16 && hour <= 18) ||
+                (hour >= 20 && hour <= 22)) {
+                1.25
+            } else {
+              1.1
+            }
+            */
+            val multiplier = 1
+
+            val eta = Math.round(baseEta * multiplier) + (inBetween.size * 120) //add 2 minutes per stop
+            minute += (eta / 60)
+            hour = startHour + (minute/60)
+
+            /*if (minute >= 60) {
+              println("rolling over")
+              println(hour)
+              hour += 1
+              println(hour)
+              minute = minute - 60
+            }
+            */
+            val realMinute =minute % 60
+
+            val modifier = if (hour >= 24) {
+              "AM"
+            } else {
+              "PM"
+            }
+
+            val time = if (hour >=24) {
+              s"${"%02d".format(hour - 24)}:${"%02d".format(realMinute)}"
+            } else {
+              s"${hour}:${"%02d".format(realMinute)}"
+            }
+            //println(s"${nextStop.id}:${nextStop.name}: ${time}")
+            val sched = Schedule(routeId = routeId,
+              stopId= nextStop.id,
+              dayOfWeek = if (hour >= 24) {
+                if (day + 1 == 7) {
+                  0
+                } else {
+                  day + 1
+                }
+              } else {
+                day
+              },
+              masterScheduleId = masterScheduleId,
+              stopTime = time)
+
+            withTransaction {
+              Schedules.upsert(sched)
+            }
+          }
+        }
+        tripCounter += 1
+      }
+    })
+  }
+
+  def getTodaysSchedule(stopId: Long) = {
     val today = new DateTime()
     //for trips beyond midnight
     val tomorrow = today.plusDays(1)
 
-    val validSchedules = schedule.filter{ case(k,v) => { 
+    val todayDay = if (today.getDayOfWeek == 7) {
+      0
+    } else {
+      today.getDayOfWeek
+    }
 
-      val jodaDOWToday = today.getDayOfWeek()
+    val tomorrowDay = if (tomorrow.getDayOfWeek == 7) {
+      0
+    } else {
+      tomorrow.getDayOfWeek
+    }
 
-      val jodaDOWTomorrow = if(tomorrow.getDayOfWeek() == 7) {
-        0 
-      } else {
-        tomorrow.getDayOfWeek() - 1
-      }
+    val sched = fetch {
+      from(Schedules)(s =>
+      where(
+        (s.stopId === stopId) and
+        (s.dayOfWeek === todayDay or s.dayOfWeek === tomorrowDay)
+      )
+      select(s)
+      orderBy(s.stopTime))
+    }
 
-      //println(jodaDOWToday)
-      //println(jodaDOWTomorrow)
-      ((DayOfWeek.withName(k).id == jodaDOWToday) || 
-       (DayOfWeek.withName(k).id == jodaDOWTomorrow))
-    }}
+    sched.filter(s => {
+      val t = s.stopTime.split(':')
+      val stopHour = t(0).toInt
+      val stopMinute = t(1).toInt
 
-    var ret = new ArrayBuffer[Map[String, Any]]
-    //println(validSchedules)
+      val todayStopTime = today
+        .withHourOfDay(stopHour)
+        .withMinuteOfHour(stopMinute)
 
-    validSchedules.zipWithIndex.foreach { case ((k,v),i)  => {
-      val valid = v.filter(s => {
-        val t = s("time").toString.split(':')
-        val stopHour = t(0).toInt
-        val stopMinute = t(1).toInt
+      val tomorrowStopTime = tomorrow
+        .withHourOfDay(stopHour)
+        .withMinuteOfHour(stopMinute)
 
-        val todayStopTime = today
-                            .withHourOfDay(stopHour)
-                            .withMinuteOfHour(stopMinute)
-
-        val tomorrowStopTime = tomorrow
-                               .withHourOfDay(stopHour)
-                               .withMinuteOfHour(stopMinute)
-
-        if (i == 0) {
-          (today.isBefore(todayStopTime) && Minutes.minutesBetween(today, todayStopTime).getMinutes <= MAX_STOP_TIME)
-        } else {
-          (today.isBefore(tomorrowStopTime) && Minutes.minutesBetween(today, tomorrowStopTime).getMinutes <= MAX_STOP_TIME)
-        }
-    }).map(s => Map("day" -> DayOfWeek.withName(k).id,  "id" -> s("id"), "time" -> s("time")))
-      if (valid.size > 0) {
-        valid.foreach(x => ret += x) 
-      }
-    }}
-    ret.toList
+      (today.isBefore(todayStopTime) && Minutes.minutesBetween(today, todayStopTime).getMinutes <= MAX_STOP_TIME) ||
+      (today.isBefore(tomorrowStopTime) && Minutes.minutesBetween(today, tomorrowStopTime).getMinutes <= MAX_STOP_TIME)
+    })
+    .sortBy(_.dayOfWeek)
+    .map(s => Map("day" -> s.dayOfWeek ,  "id" -> s.id, "time" -> s.stopTime))
   }
  
   def getForStop(stopId: Long, routeId: Long) = {

@@ -65,7 +65,7 @@ object Osrm {
      }.mkString("&") 
      val url = s"${endpoint}?loc=${start._1},${start._2}&${locParams}&compression=false"
      val http = new HttpClient(url)
-     //println(url)
+     println(url)
      val p = http.fetchAsMap()
      val geometry = p("route_geometry")
      val summary = p("route_summary").asInstanceOf[Map[String, Any]]

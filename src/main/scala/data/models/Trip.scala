@@ -388,6 +388,29 @@ object Trip extends CompanionTable[Trip] {
     occupancyTable
   }
 
+
+  def getAvailableVehicles(trip: Trip, tm: TripMeta, 
+                           availabilityTable: Map[Long, MMap[Long, Int]] ) = {
+
+    availabilityTable.filter { 
+      case(driver, table) if table.size > 0 => {
+        tm.tripStopIds.filter(ts => 
+          table(ts) > 0).size ==tm.tripStopIds.size 
+      } 
+      case _ => false 
+    }.map { 
+      case(driverId, a)  => 
+        tm.vehicles.filter(_.driverId == driverId)
+      case _ => List.empty 
+    }.toList.flatMap(x=>x) match {
+      case x:List[_] if x.size > 0 => Option(x.asInstanceOf[List[Vehicle]])
+      case _ => {
+        Trip.updateState(trip.id, RideStateType.NoAvailableVehicles.id)
+        None
+      }
+    }   
+  }
+
   def assignVehicle(trip: Trip) = {
     for {
       //trip meta information
@@ -399,27 +422,10 @@ object Trip extends CompanionTable[Trip] {
                             tm.dropoff, 
                             trip.seats)).toMap)
 
-      availableVehicles <- availabilityTable.filter { 
-                            case(driver, table) if table.size > 0 => {
-                              tm.tripStopIds.filter(ts => 
-                                  table(ts) > 0).size ==tm.tripStopIds.size 
-                            } 
-                            case _ => false 
-                          }.map { 
-                            case(driverId, a)  => 
-                                tm.vehicles.filter(_.driverId == driverId)
-                            case _ => List.empty 
-                          }.toList.flatMap(x=>x) match {
-                            case x:List[_] if x.size > 0 => Option(x.asInstanceOf[List[Vehicle]])
-                            case _ => {
-                              Trip.updateState(trip.id, RideStateType.NoAvailableVehicles.id)
-                              None
-                            }
-                          }
-       matchedTrip <- tm.getBestVehicle(availableVehicles)
-       bookableTrip <- tm.getInitialTripEtaAndRoute
-       bookedTrip <- tm.saveTrip
-                         
+      availableVehicles <- getAvailableVehicles(trip, tm, availabilityTable) 
+      matchedTrip <- tm.getBestVehicle(availableVehicles)
+      bookableTrip <- tm.getInitialTripEtaAndRoute
+      bookedTrip <- tm.saveTrip
     } yield(bookedTrip)
   }
 
